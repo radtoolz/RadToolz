@@ -1,12 +1,6 @@
-﻿Imports Microsoft.Office.Interop.Excel
-Imports Microsoft.Office.Interop.Excel.Constants
+﻿Imports System.Text.RegularExpressions
 Imports ExcelDna.Integration
-Imports ExcelDna.Integration.XlCall
-Imports ExcelDna.Integration.XlCallException
-Imports ExcelDna.Integration.ExcelIntegration
-Imports ExcelDna.Integration.ExcelReference
-Imports ExcelDna.Integration.ExcelLimits
-Imports System.Text.RegularExpressions
+Imports Microsoft.Office.Interop.Excel
 
 Public Class ProcessDecaySeries
 
@@ -14,7 +8,7 @@ Public Class ProcessDecaySeries
         '* Usage:       Contains the database for isotopes
         '* Input:       Nothing
         '* Returns:     Nothing
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        8/25/2023
 
         'Static Dim dci As Collection 'static added to clear rule violation
@@ -3854,13 +3848,13 @@ Public Class ProcessDecaySeries
 
     End Function 'GetDecaySeries
 
-    Public Function GetDecayChain( _
-    sParent As String, ByVal sTerminal As String, _
-    ByRef gdcdci() As Collection, _
-    Optional Instance As Integer = 1, _
-    Optional currBranch As Integer = 1, _
-    Optional nextBranch As Integer = 1, _
-    Optional ByRef pds As Collection = Nothing, _
+    Public Function GetDecayChain(
+    sParent As String, ByVal sTerminal As String,
+    ByRef gdcdci() As Collection,
+    Optional Instance As Integer = 1,
+    Optional currBranch As Integer = 1,
+    Optional nextBranch As Integer = 1,
+    Optional ByRef pds As Collection = Nothing,
     Optional OptionalSortOrder As Integer = 1) As Boolean
         '* Usage:       Gets decay chain from sParent to sTerminal including all branches
         '* Input:       sParent = starting member isotope
@@ -3870,7 +3864,7 @@ Public Class ProcessDecaySeries
         '*              currBranch = which member of the gdcdci() is being loaded
         '*              nextBranch = which member is next to be loaded
         '* Returns:     Nothing, but gdcdci() is fully loaded and ready for use
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        8/25/2023
 
         Dim Msg As String
@@ -4022,7 +4016,7 @@ HandleErrors:
         '*              sTerminal = last member isotope
         '*              vdcdci = Collection of DecaySeriesItems
         '* Returns:     True if sParent is first and sTerminal is last OR sTerminal is END
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         Dim Msg As String
@@ -4039,7 +4033,7 @@ HandleErrors:
         sParent = UCase(sParent)
         sTerminal = UCase(sTerminal)
 
-        If DirectCast(vdcdci.Item(1).Isotope, String) = sParent And _
+        If DirectCast(vdcdci.Item(1).Isotope, String) = sParent And
         (DirectCast(vdcdci.Item(vdcdci.Count).Isotope, String) = sTerminal Or sTerminal = "END") Then
             VerifyDecayChain = True
         End If
@@ -4063,7 +4057,7 @@ HandleErrors:
         '* Input:       gdcdci() - array of Collection object
         '*              Branches - number of collections to initialize in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         Dim x As Integer
@@ -4095,7 +4089,7 @@ HandleErrors:
         '* Input:       gdcdci() - array of Collection object
         '*              Branches - number of collections to clear in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         Dim x As Integer
@@ -4126,7 +4120,7 @@ HandleErrors:
         '* Usage:       Sorts gdcdci by .Isotopoe descending mass, then alphabetic symbol
         '* Input:       gdcdci = collection of DecaySeriesItems
         '* Returns:     True sort is successful
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         Dim dsi As DecaySeriesItem
@@ -4187,7 +4181,7 @@ HandleErrors:
         '* Input:       a and b are gdcdci.Isotope strings
         '* Returns:     True if mass A < mass B
         '*              False if mass A = mass B AND sym A > sym B
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         '***Assert a<>b
@@ -4256,7 +4250,7 @@ HandleErrors:
         '* Usage:       Adds a decay chain item to specified collection
         '* Input:       dci is a collection of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         Dim dsi As DecaySeriesItem
@@ -4290,7 +4284,7 @@ HandleErrors:
         '* Usage:       Loads decay series item to specified collection
         '* Input:       dci is a collection of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        7/19/2015
 
         Dim Msg As String
@@ -4333,7 +4327,7 @@ HandleError:
         '* Usage:       Lists entire database starting at uRng
         '* Input:       uRng = Cell address
         '* Returns:     True if successful, else False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        10/29/2016
 
         On Error GoTo HandleErrors
@@ -4435,7 +4429,7 @@ HandleErrors:
         '* Usage:       Verifies isotope is in Class
         '* Input:       uIsotope (e.g., CS-137)
         '* Returns:     True if successful, else False
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        7/31/2015
 
         On Error GoTo HandleErrors

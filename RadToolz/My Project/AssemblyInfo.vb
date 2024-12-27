@@ -1,7 +1,5 @@
-﻿Imports System.Resources
-
-Imports System
-Imports System.Reflection
+﻿Imports System.Reflection
+Imports System.Resources
 Imports System.Runtime.InteropServices
 
 ' General Information about an assembly is controlled through the following
@@ -10,17 +8,17 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("RadToolz")> 
-<Assembly: AssemblyDescription("Tools for Radiation Safety Professionals")> 
-<Assembly: AssemblyCompany("Backscatter enterprises")> 
-<Assembly: AssemblyProduct("RadToolz")> 
-<Assembly: AssemblyCopyright("Copyright ©  2015")> 
-<Assembly: AssemblyTrademark("")> 
+<Assembly: AssemblyTitle("RadToolz")>
+<Assembly: AssemblyDescription("Tools for Radiation Safety Professionals")>
+<Assembly: AssemblyCompany("Backscatter enterprises")>
+<Assembly: AssemblyProduct("RadToolz")>
+<Assembly: AssemblyCopyright("Copyright ©  2015")>
+<Assembly: AssemblyTrademark("")>
 
-<Assembly: ComVisible(False)> 
+<Assembly: ComVisible(False)>
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM
-<Assembly: Guid("613c4852-14c8-455b-bf65-8bf77b3eeaf7")> 
+<Assembly: Guid("613c4852-14c8-455b-bf65-8bf77b3eeaf7")>
 
 ' Version information for an assembly consists of the following four values:
 '
@@ -33,6 +31,6 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("0.0.0.0")> 
-<Assembly: AssemblyFileVersion("3.11.1.0")> 
-<Assembly: NeutralResourcesLanguageAttribute("en-US")> 
+<Assembly: AssemblyVersion("0.0.0.0")>
+<Assembly: AssemblyFileVersion("3.11.1.0")>
+<Assembly: NeutralResourcesLanguageAttribute("en-US")>
