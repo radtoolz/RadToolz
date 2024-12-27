@@ -1,17 +1,9 @@
-﻿Imports System
-Imports System.IO
-Imports System.Text
-Imports System.Net
-Imports System.Windows.Forms
-Imports Microsoft.Office.Interop.Excel
-Imports Microsoft.Office.Interop.Excel.Constants
+﻿Imports System.Text.RegularExpressions
 Imports ExcelDna.Integration
 Imports ExcelDna.Integration.XlCall
-Imports ExcelDna.Integration.XlCallException
-Imports ExcelDna.Integration.ExcelIntegration
-Imports System.Text.RegularExpressions
+Imports Microsoft.Office.Interop.Excel
 
-<Assembly: CLSCompliant(True)> 
+<Assembly: CLSCompliant(True)>
 
 Public Module MyFunctions
     <ExcelFunction(Description:="Return A1 or A2 value (TBq or Ci)", Category:="RadToolz")> _
@@ -28,10 +20,10 @@ Public Module MyFunctions
         '*              A1 or A2 (e.g. A1 or A2)
         '*              optional Unit (e.g., Ci or TBq)
         '* Returns:     either A1 or A2 value
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        10/29/2016
 
-        'Variables
+        'Variables  
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
@@ -124,17 +116,17 @@ HandleErrors:
         AValue = False
 
     End Function 'AValue
-    <ExcelFunction(Description:="Return dose conversion factor (rem/uCi) for inhalation or ingestion", Category:="RadToolz")> _
-    Public Function DCF( _
-        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")> _
-        Isotope As String, _
-        <ExcelArgument(Name:="DCF Standard", Description:="ICRP-68 values (i.e., 68), or ICRP-72 (i.e., 72)")> _
-        DCFStd As String, _
-        <ExcelArgument(Name:="Pathway", Description:="[INH]alation or [ING]estion")> _
-        DCFPath As String, _
-        <ExcelArgument(Name:="(optional) Lung Absorption Type", Description:="[S]low, [M]oderate, or [F]ast absorption, default is maximum")> _
-        Optional DCFType As String = "X", _
-        <ExcelArgument(Name:="(optional) INH AMAD for ICRP 68", Description:="1 or 5 micron, default is maximum.  For ICRP-72, reverts to 1 micron in all cases.")> _
+    <ExcelFunction(Description:="Return dose conversion factor (rem/uCi) for inhalation or ingestion", Category:="RadToolz")>
+    Public Function DCF(
+        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
+        Isotope As String,
+        <ExcelArgument(Name:="DCF Standard", Description:="ICRP-68 values (i.e., 68), or ICRP-72 (i.e., 72)")>
+        DCFStd As String,
+        <ExcelArgument(Name:="Pathway", Description:="[INH]alation or [ING]estion")>
+        DCFPath As String,
+        <ExcelArgument(Name:="(optional) Lung Absorption Type", Description:="[S]low, [M]oderate, or [F]ast absorption, default is maximum")>
+        Optional DCFType As String = "X",
+        <ExcelArgument(Name:="(optional) INH AMAD for ICRP 68", Description:="1 or 5 micron, default is maximum.  For ICRP-72, reverts to 1 micron in all cases.")>
         Optional DCFAMAD As String = "9") _
         As Object
         '* Usage:       Lookup dose conversion factor for Isotope
@@ -144,7 +136,7 @@ HandleErrors:
         '*              optional Absorption Type (e.g. S, M, F), defaults to maximum value
         '*              AMAD (e.g. 1 or 5), defaults to maximum value
         '* Returns:     either inhalation or ingestion dose conversion factor (rem/uCi)
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        4/15/2016
 
         'Variables
@@ -347,20 +339,20 @@ HandleErrors:
 
     End Function 'DCF
 
-    <ExcelFunction(Description:="Enumerate a decay chain", Category:="RadToolz")> _
-    Public Function EnumDecayChain( _
-        <ExcelArgument(Name:="Starting Member", Description:="First radionuclide of the decay chain (e.g., U-238)")> _
-        StartingMember As String, _
-        <ExcelArgument(Name:="Member Number", Description:="Number of the radionuclide in the decay chain based on the sort order (e.g., 1 = U-238)")> _
-        Member As Double, _
-        <ExcelArgument(Name:="(Optional) Sort Order", Description:="Order to list members; 1 = no sort (default), 2 = increasing mass, or 3 = decreasing mass")> _
+    <ExcelFunction(Description:="Enumerate a decay chain", Category:="RadToolz")>
+    Public Function EnumDecayChain(
+        <ExcelArgument(Name:="Starting Member", Description:="First radionuclide of the decay chain (e.g., U-238)")>
+        StartingMember As String,
+        <ExcelArgument(Name:="Member Number", Description:="Number of the radionuclide in the decay chain based on the sort order (e.g., 1 = U-238)")>
+        Member As Double,
+        <ExcelArgument(Name:="(Optional) Sort Order", Description:="Order to list members; 1 = no sort (default), 2 = increasing mass, or 3 = decreasing mass")>
         Optional OptionalSortOrder As Integer = 1) _
         As Object
         '* Usage:       Populates cell with decay chain member text
         '* Input:       StartingMember - first member of serial decay chain (e.g., U-238)
         '*              Member - number of member in chain
         '* Returns:     Decay chain member value
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
 
         'Variables
@@ -416,13 +408,13 @@ HandleErrors:
         EnumDecayChain = False
 
     End Function 'EnumDecayChain
-    <ExcelFunction(Description:="Calculates U-235 or Pu-239 fissile gram equivalent", Category:="RadToolz")> _
-    Public Function FGE( _
-        <ExcelArgument(Name:="Radionuclide", Description:="Fissile radionuclide of interest (e.g., Pu-241)")> _
-        Radionuclide As String, _
-        <ExcelArgument(Name:="Activity", Description:="Curies of radionuclide")> _
-        Activity As Double, _
-        <ExcelArgument(Name:="(Optional) Equivalence Basis", Description:="Either U-235 or Pu-239 equivalence (i.e., U-235 or Pu-239 (default))")> _
+    <ExcelFunction(Description:="Calculates U-235 or Pu-239 fissile gram equivalent", Category:="RadToolz")>
+    Public Function FGE(
+        <ExcelArgument(Name:="Radionuclide", Description:="Fissile radionuclide of interest (e.g., Pu-241)")>
+        Radionuclide As String,
+        <ExcelArgument(Name:="Activity", Description:="Curies of radionuclide")>
+        Activity As Double,
+        <ExcelArgument(Name:="(Optional) Equivalence Basis", Description:="Either U-235 or Pu-239 equivalence (i.e., U-235 or Pu-239 (default))")>
         Optional Basis As String = "P") _
         As Object
         '* Usage:       Calcualte FGE
@@ -430,7 +422,7 @@ HandleErrors:
         '*              Activity, curies of radionuclide
         '*              optional Basis, basis of equivalence
         '* Returns:     FGE in grams
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        4/15/2016
 
         On Error GoTo HandleErrors
@@ -522,18 +514,18 @@ HandleErrors:
     End Function
 
 
-    <ExcelFunction(Description:="Half life in specified time for a given radionuclide", Category:="RadToolz")> _
-    Public Function HalfLife( _
-        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g., U-238)")> _
-        Isotope As String, _
-        <ExcelArgument(Name:="(Optional) Time Unit", Description:="Units to report half life (i.e., [S]econds, [M]inutes, [H]ours, or [Y]ears (default)")> _
+    <ExcelFunction(Description:="Half life in specified time for a given radionuclide", Category:="RadToolz")>
+    Public Function HalfLife(
+        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g., U-238)")>
+        Isotope As String,
+        <ExcelArgument(Name:="(Optional) Time Unit", Description:="Units to report half life (i.e., [S]econds, [M]inutes, [H]ours, or [Y]ears (default)")>
         Optional TimeUnit As String = "Y") _
         As Object
         '* Usage:       Lookup half-life for Isotope
         '* Input:       Isotope (e.g., Cs-137)
         '*              TimeUnit either S, M, D, Y
         '* Returns:     Half-life in time unit
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        8/3/2015
 
         'Variables
@@ -600,16 +592,16 @@ HandleErrors:
     End Function 'HalfLife
 
     <ExcelFunction(Description:="Calculates the plutonium equivalent curies (PE-Ci) in the activity units for a radionuclide based on either ICRP-68 or -72 normalized to Pu-239, Type M, AMAD 5 micron", Category:="RadToolz")>
-    Public Function PECi( _
-        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")> _
-        Isotope As String, _
-        <ExcelArgument(Name:="Activity", Description:="Activity (e.g. Ci)")> _
-        Activity As Double, _
-        <ExcelArgument(Name:="DCF Standard", Description:="ICRP-68 values (i.e., 68), or ICRP-72 (i.e., 72)")> _
-        DCFStd As String, _
-        <ExcelArgument(Name:="(optional) Lung Absorption Type", Description:="[S]low, [M]oderate, or [F]ast absorption, default is maximum")> _
-        Optional DCFType As String = "X", _
-        <ExcelArgument(Name:="(optional) INH AMAD for ICRP 68", Description:="1 or 5 micron, default is maximum")> _
+    Public Function PECi(
+        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
+        Isotope As String,
+        <ExcelArgument(Name:="Activity", Description:="Activity (e.g. Ci)")>
+        Activity As Double,
+        <ExcelArgument(Name:="DCF Standard", Description:="ICRP-68 values (i.e., 68), or ICRP-72 (i.e., 72)")>
+        DCFStd As String,
+        <ExcelArgument(Name:="(optional) Lung Absorption Type", Description:="[S]low, [M]oderate, or [F]ast absorption, default is maximum")>
+        Optional DCFType As String = "X",
+        <ExcelArgument(Name:="(optional) INH AMAD for ICRP 68", Description:="1 or 5 micron, default is maximum")>
         Optional DCFAMAD As String = "9") _
         As Object
         '* Usage:       Calculates the PE-Ci
@@ -619,7 +611,7 @@ HandleErrors:
         '*              optional Absorption Type (e.g. S, M, F), defaults to maximum value
         '*              AMAD (e.g. 1 or 5), defaults to maximum value
         '* Returns:     PE-Ci of Isotope
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        9/23/2017
 
         'Variables
@@ -670,17 +662,17 @@ HandleErrors:
 
     End Function 'PECi
 
-    <ExcelFunction(Description:="Decay and in-growth of an isotope from a decay chain using the Bateman equation", Category:="RadToolz", IsMacroType:=False)> _
-    Public Function RadDecay( _
-        <ExcelArgument(Name:="Starting Member", Description:="First isotope of the decay chain (e.g., U-238)")> _
-        StartingMember As String, _
-        <ExcelArgument(Name:="Terminal Member", Description:="Last isotope of the decay chain (e.g., Ra-226).  Reported value will be for this isotope")> _
-        TerminalMember As String, _
-        <ExcelArgument(Name:="(Optional) Starting Activity", Description:="Starting activity of first isotope in decay chain (default = 0)")> _
-        Optional A0 As Double = 0, _
-        <ExcelArgument(Name:="(Optional) Decay Time", Description:="Time period of decay (default = 1)")> _
-        Optional DecayTime As Double = 0, _
-        <ExcelArgument(Name:="(Optional) Time Unit", Description:="[S]econds (default), [M]inutes, [H]hours, or [Y]ears")> _
+    <ExcelFunction(Description:="Decay and in-growth of an isotope from a decay chain using the Bateman equation", Category:="RadToolz", IsMacroType:=False)>
+    Public Function RadDecay(
+        <ExcelArgument(Name:="Starting Member", Description:="First isotope of the decay chain (e.g., U-238)")>
+        StartingMember As String,
+        <ExcelArgument(Name:="Terminal Member", Description:="Last isotope of the decay chain (e.g., Ra-226).  Reported value will be for this isotope")>
+        TerminalMember As String,
+        <ExcelArgument(Name:="(Optional) Starting Activity", Description:="Starting activity of first isotope in decay chain (default = 0)")>
+        Optional A0 As Double = 0,
+        <ExcelArgument(Name:="(Optional) Decay Time", Description:="Time period of decay (default = 1)")>
+        Optional DecayTime As Double = 0,
+        <ExcelArgument(Name:="(Optional) Time Unit", Description:="[S]econds (default), [M]inutes, [H]hours, or [Y]ears")>
         Optional TimeUnit As String = "Sec") _
         As Object
         '* Usage:       Calculates the activity of the terminal member after decay
@@ -690,7 +682,7 @@ HandleErrors:
         '*              DecayTime - time of decay in units of TimeUnit, default is seconds
         '*              TimeUnit - Seconds, Minutes, Hours, Days, or Years, default is seconds
         '* Returns:     Activity of TerminalMember after DecayTime, assuming 0 initial activity
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/24/2024
 
         'Variables
@@ -865,15 +857,15 @@ HandleErrors:
 
     End Function 'RadDecay
 
-    <ExcelFunction(Description:="Specific activity (Ci/g) for an isotope", Category:="RadToolz")> _
-    Public Function SpA( _
-        <ExcelArgument(Name:="Isotope", Description:="Isotope of interest (e.g., U-238)")> _
+    <ExcelFunction(Description:="Specific activity (Ci/g) for an isotope", Category:="RadToolz")>
+    Public Function SpA(
+        <ExcelArgument(Name:="Isotope", Description:="Isotope of interest (e.g., U-238)")>
         Isotope As String) _
         As Object
         '* Usage:       Calculate Specific Activity for Isotope
         '* Input:       Isotope (e.g., Cs-137)
         '* Returns:     Specific Activity in Ci/g
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        7/31/2015
 
         'Variables
@@ -922,21 +914,21 @@ HandleErrors:
 
     End Function 'SpA
 
-    <ExcelFunction(Description:="Calculate atmospheric dispersion value chi over q (s/m3)", Category:="RadToolz")> _
-    Public Function XoQ( _
-        <ExcelArgument(Name:="Downwind Distance", Description:="Downwind (x) distance of receptor in meters")> _
-        x As Double, _
-        <ExcelArgument(Name:="Crosswind Distance", Description:="Crosswind (y) distance of receptor in meters")> _
-        y As Double, _
-        <ExcelArgument(Name:="Height", Description:="Height (z) of receptor above the ground in meters")> _
-        z As Double, _
-        <ExcelArgument(Name:="Effective Stack Height", Description:="Effective height (h) of stack in meters")> _
-        h As Double, _
-        <ExcelArgument(Name:="Ceiling Height", Description:="Height of ceiling (L) in meters")> _
-        L As Double, _
-        <ExcelArgument(Name:="Stability Class", Description:="Pasquill-Gifford stability class (A-F)")> _
-        SC As String, _
-        <ExcelArgument(Name:="Wind Speed", Description:="Average wind speed (u) in meters/second")> _
+    <ExcelFunction(Description:="Calculate atmospheric dispersion value chi over q (s/m3)", Category:="RadToolz")>
+    Public Function XoQ(
+        <ExcelArgument(Name:="Downwind Distance", Description:="Downwind (x) distance of receptor in meters")>
+        x As Double,
+        <ExcelArgument(Name:="Crosswind Distance", Description:="Crosswind (y) distance of receptor in meters")>
+        y As Double,
+        <ExcelArgument(Name:="Height", Description:="Height (z) of receptor above the ground in meters")>
+        z As Double,
+        <ExcelArgument(Name:="Effective Stack Height", Description:="Effective height (h) of stack in meters")>
+        h As Double,
+        <ExcelArgument(Name:="Ceiling Height", Description:="Height of ceiling (L) in meters")>
+        L As Double,
+        <ExcelArgument(Name:="Stability Class", Description:="Pasquill-Gifford stability class (A-F)")>
+        SC As String,
+        <ExcelArgument(Name:="Wind Speed", Description:="Average wind speed (u) in meters/second")>
         u As Double) _
         As Object
 
@@ -945,7 +937,7 @@ HandleErrors:
         '* Usage:       Calculate Chi over Q value
         '* Input:       x, y, z, h, L, SC, and u as specified above
         '* Returns:     Dilution factor s/m3
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        12/30/2014
 
         'Variables
@@ -1011,18 +1003,18 @@ HandleErrors:
 
     End Function 'XoQ
 
-    <ExcelFunction(Description:="Return Number to desired accuracy", Category:="RadToolz")> _
-    Public Function SigFig( _
-        <ExcelArgument(Name:="Number", Description:="A number or expression of a number")> _
-        num As Double, _
-        <ExcelArgument(Name:="Significant Figures", Description:="Integer representing the desired number of significant figures")> _
+    <ExcelFunction(Description:="Return Number to desired accuracy", Category:="RadToolz")>
+    Public Function SigFig(
+        <ExcelArgument(Name:="Number", Description:="A number or expression of a number")>
+        num As Double,
+        <ExcelArgument(Name:="Significant Figures", Description:="Integer representing the desired number of significant figures")>
         sf As Integer) _
         As Object
         '* Usage:       Return a number to the requested accuracy
         '* Input:       num - the number to return to the desired accuracy
         '*              sf - number of significant figures as integer
         '* Returns:     The number to the requested number of significant figures
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        10/31/2015
 
         If (num = 0) Then Return 0
@@ -1036,33 +1028,33 @@ HandleErrors:
 
     End Function 'SigFig
 
-    <ExcelFunction(Description:="Return Number to desired precision", Category:="RadToolz")> _
-    Public Function ANSIRound( _
-        <ExcelArgument(Name:="Number", Description:="is the number you want to round")> _
-        num As Decimal, _
-        <ExcelArgument(Name:="(Optional) Number of Digits", Description:="is the number of digits you want to round to.  Negative round to the left of the decimal point. Zero to the nearest integer (default)")> _
+    <ExcelFunction(Description:="Return Number to desired precision", Category:="RadToolz")>
+    Public Function ANSIRound(
+        <ExcelArgument(Name:="Number", Description:="is the number you want to round")>
+        num As Decimal,
+        <ExcelArgument(Name:="(Optional) Number of Digits", Description:="is the number of digits you want to round to.  Negative round to the left of the decimal point. Zero to the nearest integer (default)")>
         Optional digits As Integer = 0) _
         As Object
         '* Usage:       Return a number to the desired precision
         '* Input:       num - the number to return to the desired precision
         '*              digits - the number of decimal places to represent
         '* Returns:     The number to the requested number of digits
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        10/31/2015
 
         Return Math.Round(num, digits)
 
     End Function 'SigFig
 
-    <ExcelFunction(Description:="List available RadToolz functions", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)> _
-    Public Function RTZFunctions( _
-        <ExcelArgument(Name:="Output Cell", Description:="Cell in which to start the output table.  Caution:  allow for ~20 empty rows; function does not check for values in cells", AllowReference:=True)> _
+    <ExcelFunction(Description:="List available RadToolz functions", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)>
+    Public Function RTZFunctions(
+        <ExcelArgument(Name:="Output Cell", Description:="Cell in which to start the output table.  Caution:  allow for ~20 empty rows; function does not check for values in cells", AllowReference:=True)>
         uRng As Object) _
         As Object
         '* Usage:       Lists all functions from RadToolz
         '* Input:       uRngVal - cell address to begin data dump
         '* Returns:     Title including version
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        10/29/2016
 
         On Error GoTo HandleErrors
@@ -1170,15 +1162,15 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Display RadToolz version number", Category:="RadToolz")> _
-    Public Function RTZVers( _
-        <ExcelArgument(Name:="None", Description:="No input required")> _
+    <ExcelFunction(Description:="Display RadToolz version number", Category:="RadToolz")>
+    Public Function RTZVers(
+        <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) _
         As Object
         '* Usage:       Reports back the version number of the RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        4/8/2016
 
         RTZVers = RadToolzVersion.ToString("0.00", Globalization.CultureInfo.InvariantCulture) & RadToolzPreRelease
@@ -1195,15 +1187,15 @@ HandleErrors:
 
     End Function 'RTZVers
 
-    <ExcelFunction(Description:="Display RadToolz references", Category:="RadToolz")> _
-    Public Function RTZRefs( _
-        <ExcelArgument(Name:="None", Description:="No input required")> _
+    <ExcelFunction(Description:="Display RadToolz references", Category:="RadToolz")>
+    Public Function RTZRefs(
+        <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) _
         As Object
         '* Usage:       Reports back the version number of the RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:       8/25/2023
 
         'Dim result As Boolean
@@ -1220,25 +1212,25 @@ HandleErrors:
                 "    Data Center. Brookhaven National Laboratory. Upton, NY 11973-5000." & vbCrLf &
                 "    http://www.nndc.bnl.gov/ as of 5/16/2019" & vbCrLf & vbCrLf
 
-        ICRP119 = "Dose conversion factors are from:" & vbCrLf & _
-                vbCrLf & _
-                "    ICRP, 2012. Compendium of Dose Coefficients based on ICRP " & vbCrLf & _
-                  "    Publication 60.ICRP Publication 119.  Ann. ICRP 41 (Suppl.)." & vbCrLf & _
+        ICRP119 = "Dose conversion factors are from:" & vbCrLf &
+                vbCrLf &
+                "    ICRP, 2012. Compendium of Dose Coefficients based on ICRP " & vbCrLf &
+                  "    Publication 60.ICRP Publication 119.  Ann. ICRP 41 (Suppl.)." & vbCrLf &
                   "    http://www.icrp.org/publication.asp?id=ICRP%20Publication%20119" & vbCrLf & vbCrLf
 
-        GENII = "Atmospheric dispersion (X/Q) coefficients and adapted equations are from:" & vbCrLf & _
-                vbCrLf & _
-                "    DOE, 2004. GENII Computer Code, Application Guidance for" & vbCrLf & _
-                "    Documented Safety Analysis,Final Report, U.S. Department of Energy." & vbCrLf & _
-                "    http://energy.gov/ehss/downloads/" & vbCrLf & _
+        GENII = "Atmospheric dispersion (X/Q) coefficients and adapted equations are from:" & vbCrLf &
+                vbCrLf &
+                "    DOE, 2004. GENII Computer Code, Application Guidance for" & vbCrLf &
+                "    Documented Safety Analysis,Final Report, U.S. Department of Energy." & vbCrLf &
+                "    http://energy.gov/ehss/downloads/" & vbCrLf &
                 "    guidance-genii-computer-code-july-6-2004" & vbCrLf & vbCrLf
 
-        ANSI8_1 = "Fissile critical mass values are from:" & vbCrLf & _
-                vbCrLf & _
-                "    ANSI, 2014a.  Nuclear Criticality Safety in Operations" & vbCrLf & _
+        ANSI8_1 = "Fissile critical mass values are from:" & vbCrLf &
+                vbCrLf &
+                "    ANSI, 2014a.  Nuclear Criticality Safety in Operations" & vbCrLf &
                   "    with Fissionable Material OUtside Reactors.  ANSI/ANS-8.1-2014." & vbCrLf & vbCrLf
 
-        ANSI8_15 = "    ANSI, 2014b.  Nuclear Criticality Safety Control of " & vbCrLf & _
+        ANSI8_15 = "    ANSI, 2014b.  Nuclear Criticality Safety Control of " & vbCrLf &
                    "    Selected Actinide Nuclides.  ANSI/ANS-8.15-2014." & vbCrLf & vbCrLf
 
         Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15
@@ -1259,15 +1251,15 @@ HandleErrors:
 
     End Function 'RTZRefs
 
-    <ExcelFunction(Description:="Check www.RadToolz.com for update availability", Category:="RadToolz")> _
-    Public Function RTZUpdate( _
-        <ExcelArgument(Name:="None", Description:="No input required")> _
+    <ExcelFunction(Description:="Check www.RadToolz.com for update availability", Category:="RadToolz")>
+    Public Function RTZUpdate(
+        <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) _
         As Object
         '* Usage:       Checks internet for RadToolz update
         '* Input:       None
         '* Returns:     Update status
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        4/15/2016
 
         On Error GoTo HandleErrors
@@ -1327,25 +1319,25 @@ HandleErrors:
 
     End Function 'RTZUpdate
 
-    <ExcelFunction(Description:="Display RadToolz license", Category:="RadToolz")> _
-    Public Function RTZLicense( _
-        <ExcelArgument(Name:="None", Description:="No input required")> _
+    <ExcelFunction(Description:="Display RadToolz license", Category:="RadToolz")>
+    Public Function RTZLicense(
+        <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) _
         As Object
         '* Usage:       Opens Browser to RadToolzLicense
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      J. J. Prowse
-        '* Date:        8/14/2015
+        '* Author:      Backscatter enterprises
+        '* Date:        8/27/2024
 
         'Dim result As Boolean
         Dim Msg As Object
-        Dim license As String = "http://www.radtoolz.com/p/license.html"
+        Dim license As String = "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt"
 
         Msg = MsgBox("Open browser for RadToolz license?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo, "RadToolz License")
         If Msg = vbYes Then Process.Start(license)
 
-        RTZLicense = "RadToolz license may be found at " & license & _
+        RTZLicense = "RadToolz license may be found at " & license &
             ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt"
 
         Exit Function
@@ -1361,15 +1353,15 @@ HandleErrors:
 
     End Function 'RTZLicense
 
-    <ExcelFunction(Description:="List all isotopes and values for all isotopes", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)> _
-    Public Function RTZParams( _
-        <ExcelArgument(Name:="Output Cell", Description:="Cell in which to start the output table.  Caution:  allow for ~200 empty rows; function does not check for values in cells", AllowReference:=True)> _
+    <ExcelFunction(Description:="List all isotopes and values for all isotopes", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)>
+    Public Function RTZParams(
+        <ExcelArgument(Name:="Output Cell", Description:="Cell in which to start the output table.  Caution:  allow for ~200 empty rows; function does not check for values in cells", AllowReference:=True)>
         uRng As Object) _
         As Object
         '* Usage:       Lists all values from RadToolz
         '* Input:       uRng - cell address to begin data dump
         '* Returns:     Title including version
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        8/14/2015
 
         On Error GoTo HandleErrors
@@ -1404,15 +1396,15 @@ HandleErrors:
 
     End Function 'RTZListParams
 
-    <ExcelFunction(Description:="Return RadToolz attribution", Category:="RadToolz")> _
-    Public Function RTZAttribution( _
-        <ExcelArgument(Name:="None", Description:="No input required")> _
+    <ExcelFunction(Description:="Return RadToolz attribution", Category:="RadToolz")>
+    Public Function RTZAttribution(
+        <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) _
         As Object
         '* Usage:       Displays RadToolz Attribution
         '* Input:       None
         '* Returns:     Attribution text
-        '* Author:      J. J. Prowse
+        '* Author:      Backscatter enterprises
         '* Date:        8/9/2015
 
         Dim Msg As Object = "None"

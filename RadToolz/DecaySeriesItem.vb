@@ -2,7 +2,7 @@
 'Imports System
 
 Public Class DecaySeriesItem
-    '* Author:      J. J. Prowse
+    '* Author:      Backscatter enterprises
     '* Date:        10/23/2018
 
     Private ReadOnly cIsotope As String
