@@ -1336,7 +1336,7 @@ HandleErrors:
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        8/27/2024
+        '* Date:        12/24/2024
 
         'Dim result As Boolean
         Dim Msg As Object
@@ -1346,7 +1346,8 @@ HandleErrors:
         If Msg = vbYes Then Process.Start(license)
 
         RTZLicense = "RadToolz license may be found at " & license &
-            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt"
+            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt" &
+            "  DnsClient.NET license may be found at https://github.com/MichaCo/DnsClient.NET/blob/dev/LICENSE"
 
         Exit Function
 
@@ -1413,18 +1414,18 @@ HandleErrors:
         '* Input:       None
         '* Returns:     Attribution text
         '* Author:      Backscatter enterprises
-        '* Date:        8/9/2015
+        '* Date:        12/28/2024
 
         Dim Msg As Object = "None"
 
         RTZAttribution =
             "RadToolz version " & RTZVers() & ".  Copyright (c) " & Year(Now) & " " &
-            "by Backscatter enterprises.  Licensed under a " &
-            "Creative Commons Attribution 4.0 International Public License at " &
-            "http://creativecommons.org/licenses/by/4.0/legalcode" & ".  " &
+            "by Backscatter enterprises.  Licensed under an " &
+            "MIT License at " &
+            "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt" & ".  " &
             "RadToolz is provided as-is and as-available.  No warranties are given " &
             "(see Disclaimer of Warranties and Limitation of Liability in the License). " &
-            "Based on a work at http://radtoolz.com"
+            "Based on a work at https://radtoolz.com"
 
         Exit Function
 
