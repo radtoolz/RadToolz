@@ -1217,19 +1217,19 @@ HandleErrors:
                 vbCrLf &
                 "    Evaluated Nuclear Structure Data File (ENSDF). National Nuclear" & vbCrLf &
                 "    Data Center. Brookhaven National Laboratory. Upton, NY 11973-5000." & vbCrLf &
-                "    http://www.nndc.bnl.gov/ as of 5/16/2019" & vbCrLf & vbCrLf
+                "    https://www.nndc.bnl.gov/ as of 5/16/2019" & vbCrLf & vbCrLf
 
         ICRP119 = "Dose conversion factors are from:" & vbCrLf &
                 vbCrLf &
                 "    ICRP, 2012. Compendium of Dose Coefficients based on ICRP " & vbCrLf &
                   "    Publication 60.ICRP Publication 119.  Ann. ICRP 41 (Suppl.)." & vbCrLf &
-                  "    http://www.icrp.org/publication.asp?id=ICRP%20Publication%20119" & vbCrLf & vbCrLf
+                  "    https://www.icrp.org/publication.asp?id=ICRP%20Publication%20119" & vbCrLf & vbCrLf
 
         GENII = "Atmospheric dispersion (X/Q) coefficients and adapted equations are from:" & vbCrLf &
                 vbCrLf &
                 "    DOE, 2004. GENII Computer Code, Application Guidance for" & vbCrLf &
                 "    Documented Safety Analysis,Final Report, U.S. Department of Energy." & vbCrLf &
-                "    http://energy.gov/ehss/downloads/" & vbCrLf &
+                "    https://energy.gov/ehss/downloads/" & vbCrLf &
                 "    guidance-genii-computer-code-july-6-2004" & vbCrLf & vbCrLf
 
         ANSI8_1 = "Fissile critical mass values are from:" & vbCrLf &
@@ -1293,14 +1293,14 @@ HandleErrors:
     '        If versNum > RadToolzVersion Then 'Need an update
     '            Msg = "RadToolz is now at version " + vers + ".  You should update." & vbCrLf & "Open browser to www.RadToolz.com?"
     '            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-    '            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
+    '            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
     '            vers = "Current RadToolz version is " & vers & "."
     '        ElseIf versNum < RadToolzVersion Then 'Pre-release version
     '            vers = "RadToolz is now at version " + vers + ".  You have pre-release version " & RTZVers().ToString
     '        ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then 'Pre-release of current version
     '            Msg = "RadToolz " + vers + " has been released.  You have a pre-release version and should update." & vbCrLf & "Open browser to www.RadToolz.com?"
     '            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-    '            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
+    '            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
     '            vers = "Current RadToolz version is " & vers & "."
     '        Else 'Current release version
     '            vers = "RadToolz is up to date."
