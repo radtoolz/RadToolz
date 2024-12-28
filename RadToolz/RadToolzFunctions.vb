@@ -1,18 +1,25 @@
-﻿Imports System.Text.RegularExpressions
+﻿Imports System
+Imports System.Collections.Generic
+Imports System.Net
+Imports System.Net.Sockets
+Imports System.Text.RegularExpressions
 Imports ExcelDna.Integration
 Imports ExcelDna.Integration.XlCall
 Imports Microsoft.Office.Interop.Excel
+Imports DnsClient
+Imports DnsClient.Protocol
+
 
 <Assembly: CLSCompliant(True)>
 
 Public Module MyFunctions
-    <ExcelFunction(Description:="Return A1 or A2 value (TBq or Ci)", Category:="RadToolz")> _
-    Public Function AValue( _
-        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")> _
-        Isotope As String, _
-        <ExcelArgument(Name:="Value", Description:="10 CFR 71 App A Value (i.e., A1 = 1 or A2 = 2)")> _
-        A1A2 As String, _
-        <ExcelArgument(Name:="(optional) Unit", Description:="TBq (default) or Ci")> _
+    <ExcelFunction(Description:="Return A1 or A2 value (TBq or Ci)", Category:="RadToolz")>
+    Public Function AValue(
+        <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
+        Isotope As String,
+        <ExcelArgument(Name:="Value", Description:="10 CFR 71 App A Value (i.e., A1 = 1 or A2 = 2)")>
+        A1A2 As String,
+        <ExcelArgument(Name:="(optional) Unit", Description:="TBq (default) or Ci")>
         Optional Unit As String = "TBq") _
         As Object
         '* Usage:       Lookup A1 or A2 values
@@ -1251,73 +1258,74 @@ HandleErrors:
 
     End Function 'RTZRefs
 
-    <ExcelFunction(Description:="Check www.RadToolz.com for update availability", Category:="RadToolz")>
-    Public Function RTZUpdate(
-        <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
-        As Object
-        '* Usage:       Checks internet for RadToolz update
-        '* Input:       None
-        '* Returns:     Update status
-        '* Author:      Backscatter enterprises
-        '* Date:        4/15/2016
+    '    DEPRECATED
+    '    <ExcelFunction(Description:="Check www.RadToolz.com for update availability", Category:="RadToolz")>
+    '    Public Function RTZUpdate(
+    '        <ExcelArgument(Name:="None", Description:="No input required")>
+    '        Optional no_input As Object = Nothing) _
+    '        As Object
+    '        '* Usage:       Checks internet for RadToolz update
+    '        '* Input:       None
+    '        '* Returns:     Update status
+    '        '* Author:      Backscatter enterprises
+    '        '* Date:        4/15/2016
 
-        On Error GoTo HandleErrors
+    '        On Error GoTo HandleErrors
 
-        Dim Msg As Object
-        Dim src As String = New System.Net.WebClient().DownloadString("http://www.radtoolz.com/p/hiddenversion.html")
-        Dim x As Integer
-        Dim vers As String
-        Dim versNum As Double
+    '        Dim Msg As Object
+    '        Dim src As String = New System.Net.WebClient().DownloadString("http://www.radtoolz.com/p/hiddenversion.html")
+    '        Dim x As Integer
+    '        Dim vers As String
+    '        Dim versNum As Double
 
-        If IsError(src) Then
-            RTZUpdate = "Unable to connect to www.RadToolz.com"
-            GoTo exithere
-        End If
+    '        If IsError(src) Then
+    '            RTZUpdate = "Unable to connect to www.RadToolz.com"
+    '            GoTo exithere
+    '        End If
 
-        x = src.IndexOf("articleBody")
-        vers = Mid(src, x + Len("articleBody'> "), 20) ' got version
-        x = vers.IndexOf("<")
-        vers = Left(vers, x - 1) 'strips the < off
-        vers = vers.Trim 'version is now a string
-        versNum = Convert.ToDouble(vers)
+    '        x = src.IndexOf("articleBody")
+    '        vers = Mid(src, x + Len("articleBody'> "), 20) ' got version
+    '        x = vers.IndexOf("<")
+    '        vers = Left(vers, x - 1) 'strips the < off
+    '        vers = vers.Trim 'version is now a string
+    '        versNum = Convert.ToDouble(vers)
 
-        If versNum > RadToolzVersion Then 'Need an update
-            Msg = "RadToolz is now at version " + vers + ".  You should update." & vbCrLf & "Open browser to www.RadToolz.com?"
-            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
-        ElseIf versNum < RadToolzVersion Then 'Pre-release version
-            vers = "RadToolz is now at version " + vers + ".  You have pre-release version " & RTZVers().ToString
-        ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then 'Pre-release of current version
-            Msg = "RadToolz " + vers + " has been released.  You have a pre-release version and should update." & vbCrLf & "Open browser to www.RadToolz.com?"
-            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
-        Else 'Current release version
-            vers = "RadToolz is up to date."
-        End If
+    '        If versNum > RadToolzVersion Then 'Need an update
+    '            Msg = "RadToolz is now at version " + vers + ".  You should update." & vbCrLf & "Open browser to www.RadToolz.com?"
+    '            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+    '            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
+    '            vers = "Current RadToolz version is " & vers & "."
+    '        ElseIf versNum < RadToolzVersion Then 'Pre-release version
+    '            vers = "RadToolz is now at version " + vers + ".  You have pre-release version " & RTZVers().ToString
+    '        ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then 'Pre-release of current version
+    '            Msg = "RadToolz " + vers + " has been released.  You have a pre-release version and should update." & vbCrLf & "Open browser to www.RadToolz.com?"
+    '            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+    '            If Msg = vbYes Then Process.Start("http://www.radtoolz.com/")
+    '            vers = "Current RadToolz version is " & vers & "."
+    '        Else 'Current release version
+    '            vers = "RadToolz is up to date."
+    '        End If
 
-        RTZUpdate = vers
+    '        RTZUpdate = vers
 
-exithere:
-        Exit Function
+    'exithere:
+    '        Exit Function
 
-HandleErrors:
+    'HandleErrors:
 
-        Select Case Err.Number
-            Case 0
-                RTZUpdate = vers
-            Case 5
-                RTZUpdate = "Unable to connect to www.RadToolz.com.  Try again later."
-            Case Else
-                Msg = "Error # " & Str(Err.Number) & " was generated by " _
-                    & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
-                MsgBox(Msg, MsgBoxStyle.Critical, "Error")
-                RTZUpdate = ExcelError.ExcelErrorValue
-        End Select
+    '        Select Case Err.Number
+    '            Case 0
+    '                RTZUpdate = vers
+    '            Case 5
+    '                RTZUpdate = "Unable to connect to www.RadToolz.com.  Try again later."
+    '            Case Else
+    '                Msg = "Error # " & Str(Err.Number) & " was generated by " _
+    '                    & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
+    '                MsgBox(Msg, MsgBoxStyle.Critical, "Error")
+    '                RTZUpdate = ExcelError.ExcelErrorValue
+    '        End Select
 
-    End Function 'RTZUpdate
+    '    End Function 'RTZUpdate
 
     <ExcelFunction(Description:="Display RadToolz license", Category:="RadToolz")>
     Public Function RTZLicense(
@@ -1409,13 +1417,13 @@ HandleErrors:
 
         Dim Msg As Object = "None"
 
-        RTZAttribution = _
-            "RadToolz version " & RTZVers() & ".  Copyright (c) " & Year(Now) & " " & _
-            "by Backscatter enterprises.  Licensed under a " & _
-            "Creative Commons Attribution 4.0 International Public License at " & _
-            "http://creativecommons.org/licenses/by/4.0/legalcode" & ".  " & _
-            "RadToolz is provided as-is and as-available.  No warranties are given " & _
-            "(see Disclaimer of Warranties and Limitation of Liability in the License). " & _
+        RTZAttribution =
+            "RadToolz version " & RTZVers() & ".  Copyright (c) " & Year(Now) & " " &
+            "by Backscatter enterprises.  Licensed under a " &
+            "Creative Commons Attribution 4.0 International Public License at " &
+            "http://creativecommons.org/licenses/by/4.0/legalcode" & ".  " &
+            "RadToolz is provided as-is and as-available.  No warranties are given " &
+            "(see Disclaimer of Warranties and Limitation of Liability in the License). " &
             "Based on a work at http://radtoolz.com"
 
         Exit Function
@@ -1521,5 +1529,84 @@ HandleErrors:
         End Select
 
     End Function
+
+    <ExcelFunction(Description:="Check radtoolz.com DNS TXT record for update availability", Category:="RadToolz")>
+    Public Function RTZUpdate(
+        <ExcelArgument(Name:="None", Description:="No input required")>
+        Optional no_input As Object = Nothing) As Object
+        '* Usage:       Checks DNS TXT record for RadToolz update
+        '* Input:       None
+        '* Returns:     Update status
+        '* Author:      Backscatter enterprises
+        '* Date:        12/28/2024
+
+        On Error GoTo HandleErrors
+
+        Dim Msg As Object
+        Dim vers As String = "RTZ version not found."
+        Dim versNum As Double
+        Dim client As New LookupClient()
+        Dim txt As String
+        Dim result As Object
+        Dim TxtRecord As Object
+        Dim found As Boolean = False
+
+        ' Create a DNS lookup client for TXT records
+        result = client.Query("radtoolz.com", QueryType.TXT).Answers.TxtRecords().ToList
+
+        ' Extract the version number from the TXT record
+        For Each TxtRecord In CType(result, IEnumerable)
+            For Each txt In CType(TxtRecord.Text, IEnumerable)
+                If txt.StartsWith("version=") Then
+                    vers = txt.Substring("version=".Length).Trim()
+                    found = True
+                    Exit For
+                End If
+            Next
+            If found Then Exit For
+        Next
+
+        If String.IsNullOrEmpty(vers) Then
+            RTZUpdate = "Unable to retrieve version information."
+            GoTo exithere
+        End If
+
+        versNum = Convert.ToDouble(vers)
+
+        If versNum > RadToolzVersion Then ' Need an update
+            Msg = "RadToolz is now at version " + vers + ".  You should update." & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
+            vers = "Current RadToolz version is " & vers & "."
+        ElseIf versNum < RadToolzVersion Then ' Pre-release version
+            vers = "RadToolz is now at version " + vers + ".  You have pre-release version " & RTZVers().ToString
+        ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
+            Msg = "RadToolz " + vers + " has been released.  You have a pre-release version and should update." & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
+            vers = "Current RadToolz version is " & vers & "."
+        Else ' Current release version
+            vers = "RadToolz is up to date."
+        End If
+
+        RTZUpdate = vers
+
+exithere:
+        Exit Function
+
+HandleErrors:
+        Select Case Err.Number
+            Case 0
+                RTZUpdate = vers
+            Case 5
+                RTZUpdate = "Unable to connect to DNS server. Try again later."
+            Case Else
+                Msg = "Error # " & Str(Err.Number) & " was generated by " _
+                    & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
+                MsgBox(Msg, MsgBoxStyle.Critical, "Error")
+                RTZUpdate = ExcelError.ExcelErrorValue
+        End Select
+
+    End Function 'RTZUpdate
 
 End Module
