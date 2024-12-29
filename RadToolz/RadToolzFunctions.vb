@@ -1,19 +1,15 @@
-﻿Imports System
-Imports System.Collections.Generic
-Imports System.Net
-Imports System.Net.Sockets
-Imports System.Text.RegularExpressions
+﻿Imports System.Text.RegularExpressions
+Imports DnsClient
 Imports ExcelDna.Integration
 Imports ExcelDna.Integration.XlCall
 Imports Microsoft.Office.Interop.Excel
-Imports DnsClient
-Imports DnsClient.Protocol
 
 'REQUIRES:  NuGet packages ExcelDna and DnsClient
 
 <Assembly: CLSCompliant(True)>
 
 Public Module MyFunctions
+
     <ExcelFunction(Description:="Return A1 or A2 value (TBq or Ci)", Category:="RadToolz")>
     Public Function AValue(
         <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
@@ -31,7 +27,7 @@ Public Module MyFunctions
         '* Author:      Backscatter enterprises
         '* Date:        10/29/2016
 
-        'Variables  
+        'Variables
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
@@ -124,6 +120,7 @@ HandleErrors:
         AValue = False
 
     End Function 'AValue
+
     <ExcelFunction(Description:="Return dose conversion factor (rem/uCi) for inhalation or ingestion", Category:="RadToolz")>
     Public Function DCF(
         <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
@@ -262,7 +259,7 @@ HandleErrors:
                 GoTo ExitHere
         End Select
 
-        'Is this a max case? 
+        'Is this a max case?
         If DCFType = "X" And DCFAMAD = "9" Then 'this will return the highest DCF, already know whether 68 or 72
             Dim doubles As New List(Of Double)(New Double() {S1, S5, M1, M5, F1, F5})
             DCF = doubles.Max()
@@ -416,6 +413,7 @@ HandleErrors:
         EnumDecayChain = False
 
     End Function 'EnumDecayChain
+
     <ExcelFunction(Description:="Calculates U-235 or Pu-239 fissile gram equivalent", Category:="RadToolz")>
     Public Function FGE(
         <ExcelArgument(Name:="Radionuclide", Description:="Fissile radionuclide of interest (e.g., Pu-241)")>
@@ -520,7 +518,6 @@ HandleErrors:
         FGE = 0
 
     End Function
-
 
     <ExcelFunction(Description:="Half life in specified time for a given radionuclide", Category:="RadToolz")>
     Public Function HalfLife(
@@ -651,7 +648,6 @@ HandleErrors:
         PuDCF = DCF("PU-239", DCFStd, DCFPath, "M", "5")
         If Not IsNumeric(PuDCF) Then GoTo ExitHere 'trap for string response
         If DirectCast(PuDCF, Double) = 0 Then GoTo ExitHere 'trap for div 0
-
 
         'Calculate PE-Ci for Isotope
         PECi = Activity * DirectCast(uIsoDCF, Double) / DirectCast(PuDCF, Double)
@@ -1079,7 +1075,7 @@ HandleErrors:
         r = Convert.ToInt32(iRng.Row)
         c = Convert.ToInt32(iRng.Column)
 
-        'Write Nuclear Functions 'r++ after each description 
+        'Write Nuclear Functions 'r++ after each description
         iSheet.Cells(r, c) = "ANSIRound"
         iSheet.Cells(r, c + 1) = "Round a value in accordance with ANSI standard"
         r = r + 1
@@ -1415,7 +1411,6 @@ HandleErrors:
             bz(3) = 0.5409
             bz(4) = 0.3979
             bz(5) = 0.331
-
         Else
             az(0) = 0
             az(1) = 0
