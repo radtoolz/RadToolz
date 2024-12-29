@@ -1198,8 +1198,9 @@ HandleErrors:
 
         ENSDF = "Nuclide data and adapted equations are from:" & vbCrLf &
                 vbCrLf &
-                "    Evaluated Nuclear Structure Data File (ENSDF), NuDat, and Nuclear Data Wallet Cards," &
-                "    National Nuclear Data Center. Brookhaven National Laboratory. Upton, NY 11973-5000." & vbCrLf &
+                "    Evaluated Nuclear Structure Data File (ENSDF), NuDat, and Nuclear" & vbCrLf &
+                "    Data Wallet Cards, National Nuclear Data Center. Brookhaven" & vbCrLf &
+                "    National Laboratory. Upton, NY 11973-5000." & vbCrLf &
                 "    https://www.nndc.bnl.gov/ as of 12/24/2024" & vbCrLf & vbCrLf
 
         ICRP119 = "Dose conversion factors are from:" & vbCrLf &
