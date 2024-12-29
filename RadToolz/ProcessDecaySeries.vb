@@ -2538,7 +2538,6 @@ Public Class ProcessDecaySeries
 }
         dci.Add(dsi)
 
-
         dsi = New DecaySeriesItem With {
   .Isotope = "BA-137M",
   .DCF68inhF1 = 0,
@@ -3841,7 +3840,6 @@ Public Class ProcessDecaySeries
 }
         dci.Add(dsi)
 
-
         '<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
         GetDecaySeries = dci
@@ -4461,4 +4459,5 @@ HandleErrors:
         End If
 
     End Function
+
 End Class
