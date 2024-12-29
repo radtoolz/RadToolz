@@ -9,7 +9,7 @@ Public Class ProcessDecaySeries
         '* Input:       Nothing
         '* Returns:     Nothing
         '* Author:      Backscatter enterprises
-        '* Date:        8/25/2023
+        '* Date:        12/24/224
 
         'Static Dim dci As Collection 'static added to clear rule violation
         Dim dci As Collection

@@ -9,6 +9,7 @@ Imports Microsoft.Office.Interop.Excel
 Imports DnsClient
 Imports DnsClient.Protocol
 
+'REQUIRES:  NuGet packages ExcelDna and DnsClient
 
 <Assembly: CLSCompliant(True)>
 
@@ -805,7 +806,7 @@ HandleErrors:
                 For j = 1 To n
                     If j <> i Then
                         deltaLambda = (DirectCast(cDC(Branch).Item(j).Lambda, Double) - DirectCast(cDC(Branch).Item(i).Lambda, Double))
-                        If deltaLambda = 0 Then 'div by zero trap
+                        If deltaLambda = 0 Then 'div by zero trap - not needed with current ProcessDecaySeries data
                             delta = 0.000000000000001
                             deltaLambda = (DirectCast(cDC(Branch).Item(j).Lambda, Double) * (1 + delta)) - (DirectCast(cDC(Branch).Item(i).Lambda, Double) * (1 - delta))
                         End If
@@ -1185,7 +1186,7 @@ HandleErrors:
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        12/38/2024
+        '* Date:        12/29/2024
 
         'Dim result As Boolean
         Dim Msg As String
@@ -1197,9 +1198,9 @@ HandleErrors:
 
         ENSDF = "Nuclide data and adapted equations are from:" & vbCrLf &
                 vbCrLf &
-                "    Evaluated Nuclear Structure Data File (ENSDF). National Nuclear" & vbCrLf &
-                "    Data Center. Brookhaven National Laboratory. Upton, NY 11973-5000." & vbCrLf &
-                "    https://www.nndc.bnl.gov/ as of 5/16/2019" & vbCrLf & vbCrLf
+                "    Evaluated Nuclear Structure Data File (ENSDF), NuDat, and Nuclear Data Wallet Cards," &
+                "    National Nuclear Data Center. Brookhaven National Laboratory. Upton, NY 11973-5000." & vbCrLf &
+                "    https://www.nndc.bnl.gov/ as of 12/24/2024" & vbCrLf & vbCrLf
 
         ICRP119 = "Dose conversion factors are from:" & vbCrLf &
                 vbCrLf &
@@ -1207,7 +1208,7 @@ HandleErrors:
                   "    Publication 60.ICRP Publication 119.  Ann. ICRP 41 (Suppl.)." & vbCrLf &
                   "    https://www.icrp.org/publication.asp?id=ICRP%20Publication%20119" & vbCrLf & vbCrLf
 
-        GENII = "Atmospheric dispersion (X/Q) coefficients and adapted equations are from:" & vbCrLf &
+        GENII = "Atmospheric dispersion (X/Q) coefficients And adapted equations are from:" & vbCrLf &
                 vbCrLf &
                 "    DOE, 2004. GENII Computer Code, Application Guidance for" & vbCrLf &
                 "    Documented Safety Analysis,Final Report, U.S. Department of Energy." & vbCrLf &
@@ -1220,7 +1221,7 @@ HandleErrors:
                   "    with Fissionable Material OUtside Reactors.  ANSI/ANS-8.1-2014." & vbCrLf & vbCrLf
 
         ANSI8_15 = "    ANSI, 2014b.  Nuclear Criticality Safety Control of " & vbCrLf &
-                   "    Selected Actinide Nuclides.  ANSI/ANS-8.15-2014." & vbCrLf & vbCrLf
+                   "    Selected Actinide Nuclides.  ANSI/ANS-8.15-2014 (R2019)." & vbCrLf & vbCrLf
 
         Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15
         MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers())
@@ -1275,7 +1276,7 @@ HandleErrors:
 
     End Function 'RTZLicense
 
-    <ExcelFunction(Description:="List all isotopes and values for all isotopes", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)>
+    <ExcelFunction(Description:="List all isotopes And values for all isotopes", Category:="RadToolz", IsMacroType:=True, IsVolatile:=False)>
     Public Function RTZParams(
         <ExcelArgument(Name:="Output Cell", Description:="Cell in which to start the output table.  Caution:  allow for ~200 empty rows; function does not check for values in cells", AllowReference:=True)>
         uRng As Object) _
@@ -1444,7 +1445,7 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Check radtoolz.com DNS TXT record for update availability", Category:="RadToolz")>
+    <ExcelFunction(Description:="Check radtoolz.com DNS TXT record for update availability.", Category:="RadToolz")>
     Public Function RTZUpdate(
         <ExcelArgument(Name:="None", Description:="No input required")>
         Optional no_input As Object = Nothing) As Object
