@@ -20,3 +20,9 @@ jobs:
 
     - name: Build solution
       run: msbuild /t:Build /p:Configuration=Release
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: xll-build
+        path: Builds
