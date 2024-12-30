@@ -1,39 +1,21 @@
 name: Build XLL
 
- 
-
 on:
-
   push:
-
     branches: [ main ]
-
   pull_request:
-
     branches: [ main ]
-
- 
 
 jobs:
-
   build:
-
     runs-on: windows-latest
 
- 
-
     steps:
-
     - name: Checkout code
-
       uses: actions/checkout@v2
 
- 
-
     - name: Set up Visual Studio
-
       uses: microsoft/setup-msbuild@v1
 
- 
-
     - name: Build solution
+      run: msbuild /t:Build /p:Configuration=Release
