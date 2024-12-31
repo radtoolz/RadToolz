@@ -18,26 +18,18 @@ jobs:
     - name: Set up Visual Studio
       uses: microsoft/setup-msbuild@v1
 
-    - name: Install Excel-DNA Tools
-      run: |
-        choco install exceldna
-
-    - name: Build solution
-      run: msbuild /t:Build /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=Builds
+    - name: Restore NuGet packages
+      run: nuget restore RadToolz.sln
 
     - name: Post-build steps for Excel-DNA 32-bit
       run: |
-        ExcelDnaPack.exe /Y Builds\MyAddin.dna /O Builds\RadToolz-AddIn.xll
+        msbuild /t:Build /p:Configuration=Release /p:Platform=x86 /p:OutputPath=Builds
+        ExcelDnaPack.exe /Y Builds\RadToolz-AddIn.dna /O Builds\RadToolz-AddIn.xll
 
     - name: Post-build steps for Excel-DNA 64-bit
       run: |
-        ExcelDnaPack.exe /Y Builds\MyAddin.dna /O Builds\RadToolz-AddIn64.xll
+        msbuild /t:Build /p:Configuration=Release /p:Platform=x64 /p:OutputPath=Builds
+        ExcelDnaPack.exe /Y Builds\RadToolz-AddIn.dna /O Builds\RadToolz-AddIn64.xll
 
     - name: List Builds folder contents
       run: dir Builds
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: xll-build
-        path: Builds
