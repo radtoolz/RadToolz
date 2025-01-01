@@ -121,7 +121,7 @@ HandleErrors:
 
     End Function 'AValue
 
-    <ExcelFunction(Description:="Return dose conversion factor (rem/uCi) for inhalation or ingestion", Category:="RadToolz")>
+    <ExcelFunction(Description:="Return dose conversion factor (rem/uCi) or (Sv/Bq) for inhalation or ingestion", Category:="RadToolz")>
     Public Function DCF(
         <ExcelArgument(Name:="Radionuclide", Description:="Radionuclide of interest (e.g. Cs-137)")>
         Isotope As String,
@@ -132,7 +132,9 @@ HandleErrors:
         <ExcelArgument(Name:="(optional) Lung Absorption Type", Description:="[S]low, [M]oderate, or [F]ast absorption, default is maximum")>
         Optional DCFType As String = "X",
         <ExcelArgument(Name:="(optional) INH AMAD for ICRP 68", Description:="1 or 5 micron, default is maximum.  For ICRP-72, reverts to 1 micron in all cases.")>
-        Optional DCFAMAD As String = "9") _
+        Optional DCFAMAD As String = "9",
+        <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0 (rem/uCi), 1 returns (Sv/Bq).")>
+        Optional SI As Integer = 0) _
         As Object
         '* Usage:       Lookup dose conversion factor for Isotope
         '* Input:       Isotope (e.g., Cs-137)
@@ -140,9 +142,10 @@ HandleErrors:
         '*              Pathway (e.g., INH or ING)
         '*              optional Absorption Type (e.g. S, M, F), defaults to maximum value
         '*              AMAD (e.g. 1 or 5), defaults to maximum value
-        '* Returns:     either inhalation or ingestion dose conversion factor (rem/uCi)
+        '*              optional SI, defaults to 0 - English units
+        '* Returns:     either inhalation or ingestion dose conversion factor (rem/uCi) or (Sv/Bq)
         '* Author:      Backscatter enterprises
-        '* Date:        4/15/2016
+        '* Date:        1/1/2025
 
         'Variables
         Dim pds As New ProcessDecaySeries
@@ -150,7 +153,14 @@ HandleErrors:
         Dim Msg As String
         Dim DCFTemp As String
         Dim cDC(0 To maxBranches) As Collection
-        Dim S1 As Double, S5 As Double, M1 As Double, M5 As Double, F1 As Double, F5 As Double
+        Dim S1 As Double, S5 As Double, M1 As Double, M5 As Double, F1 As Double, F5 As Double, SIConv As Double
+
+        'Create SI conversion factor
+        If SI = 0 Then
+            SIConv = 1
+        Else
+            SIConv = rem2Sv * 1000000.0 / Ci2Bq
+        End If
 
         'Assume it goes bad
         DCF = "#N/A"
@@ -229,10 +239,10 @@ HandleErrors:
         'Do Ingestion Cases
         If DCFPath = "ING" Then
             If DCFStd = "68" Then
-                DCF = DirectCast(cDC(1).Item(1).DCF68ing, Double)
+                DCF = DirectCast(cDC(1).Item(1).DCF68ing, Double) * SIConv
                 GoTo ExitHere
             Else 'DCFStd = 72
-                DCF = DirectCast(cDC(1).Item(1).DCF72ing, Double)
+                DCF = DirectCast(cDC(1).Item(1).DCF72ing, Double) * SIConv
                 GoTo ExitHere
             End If
         End If
@@ -262,7 +272,7 @@ HandleErrors:
         'Is this a max case?
         If DCFType = "X" And DCFAMAD = "9" Then 'this will return the highest DCF, already know whether 68 or 72
             Dim doubles As New List(Of Double)(New Double() {S1, S5, M1, M5, F1, F5})
-            DCF = doubles.Max()
+            DCF = doubles.Max() * SIConv
             GoTo ExitHere
         End If
 
@@ -271,11 +281,11 @@ HandleErrors:
             Select Case DCFAMAD
                 Case "1"
                     Dim doubles As New List(Of Double)(New Double() {S1, M1, F1})
-                    DCF = doubles.Max
+                    DCF = doubles.Max * SIConv
                     GoTo ExitHere
                 Case "5"
                     Dim doubles As New List(Of Double)(New Double() {S5, M5, F5})
-                    DCF = doubles.Max
+                    DCF = doubles.Max * SIConv
                     GoTo ExitHere
                 Case Else 'should NEVER get to this
                     DCF = "#N/A"
@@ -288,15 +298,15 @@ HandleErrors:
             Select Case DCFType
                 Case "S"
                     Dim doubles As New List(Of Double)(New Double() {S1, S5})
-                    DCF = doubles.Max
+                    DCF = doubles.Max * SIConv
                     GoTo ExitHere
                 Case "M"
                     Dim doubles As New List(Of Double)(New Double() {M1, M5})
-                    DCF = doubles.Max
+                    DCF = doubles.Max * SIConv
                     GoTo ExitHere
                 Case "F"
                     Dim doubles As New List(Of Double)(New Double() {F1, F5})
-                    DCF = doubles.Max
+                    DCF = doubles.Max * SIConv
                     GoTo ExitHere
                 Case Else 'should NEVER get to this
                     DCF = "#N/A"
@@ -309,17 +319,17 @@ HandleErrors:
 
         Select Case DCFTemp
             Case "S1"
-                DCF = S1
+                DCF = S1 * SIConv
             Case "S5"
-                DCF = S5
+                DCF = S5 * SIConv
             Case "M1"
-                DCF = M1
+                DCF = M1 * SIConv
             Case "M5"
-                DCF = M5
+                DCF = M5 * SIConv
             Case "F1"
-                DCF = F1
+                DCF = F1 * SIConv
             Case "F5"
-                DCF = F5
+                DCF = F5 * SIConv
             Case Else 'should NEVER get to this
 
         End Select
@@ -418,18 +428,20 @@ HandleErrors:
     Public Function FGE(
         <ExcelArgument(Name:="Radionuclide", Description:="Fissile radionuclide of interest (e.g., Pu-241)")>
         Radionuclide As String,
-        <ExcelArgument(Name:="Activity", Description:="Curies of radionuclide")>
+        <ExcelArgument(Name:="Activity", Description:="Activity of radionuclide (Ci or Bq)")>
         Activity As Double,
         <ExcelArgument(Name:="(Optional) Equivalence Basis", Description:="Either U-235 or Pu-239 equivalence (i.e., U-235 or Pu-239 (default))")>
-        Optional Basis As String = "P") _
+        Optional Basis As String = "P",
+        <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0  = Ci for activity, 1 = Bq.")>
+        Optional SI As Integer = 0) _
         As Object
         '* Usage:       Calcualte FGE
         '* Input:       Radionuclide (e.g., Pu-241)
-        '*              Activity, curies of radionuclide
+        '*              Activity of radionuclide
         '*              optional Basis, basis of equivalence
         '* Returns:     FGE in grams
         '* Author:      Backscatter enterprises
-        '* Date:        4/15/2016
+        '* Date:        1/1/2025
 
         On Error GoTo HandleErrors
 
@@ -438,6 +450,14 @@ HandleErrors:
         Dim D As Double
         Dim Msg As String
         Dim uSpA As Object
+        Dim SIConv As Double
+
+        'Create SI conversion factor
+        If SI = 0 Then
+            SIConv = 1
+        Else
+            SIConv = 1 / Ci2Bq
+        End If
 
         'Kludge because optional parameter is not being set for no entry
         If Basis = "" Or IsNothing(Basis) Then
@@ -504,7 +524,7 @@ HandleErrors:
             Exit Function
         End If
 
-        FGE = (N / D) * (Activity / uSpA)
+        FGE = (N / D) * (Activity / uSpA) * SIConv
 
         Exit Function
 
@@ -843,16 +863,18 @@ HandleErrors:
 
     End Function 'RadDecay
 
-    <ExcelFunction(Description:="Specific activity (Ci/g) for an isotope", Category:="RadToolz")>
+    <ExcelFunction(Description:="Specific activity (Ci/g) or (Bq/kg) for an isotope", Category:="RadToolz")>
     Public Function SpA(
         <ExcelArgument(Name:="Isotope", Description:="Isotope of interest (e.g., U-238)")>
-        Isotope As String) _
+        Isotope As String,
+        <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0  = (Ci/g)  1 = (Bq/kg).")>
+        Optional SI As Integer = 0) _
         As Object
         '* Usage:       Calculate Specific Activity for Isotope
         '* Input:       Isotope (e.g., Cs-137)
-        '* Returns:     Specific Activity in Ci/g
+        '* Returns:     Specific Activity in Ci/g or Bq/kg
         '* Author:      Backscatter enterprises
-        '* Date:        7/31/2015
+        '* Date:        1/1/2025
 
         'Variables
         Dim m As Integer
@@ -860,6 +882,14 @@ HandleErrors:
         Dim bRsp As Boolean
         Dim Msg As String
         Dim cDC(0 To maxBranches) As Collection
+        Dim SIConv As Double
+
+        'Create SI conversion factor
+        If SI = 0 Then
+            SIConv = 1
+        Else
+            SIConv = Ci2Bq * 1000
+        End If
 
         Isotope = UCase(Isotope)
 
@@ -882,7 +912,7 @@ HandleErrors:
         Isotope = Right(Isotope, Len(Isotope) - m)
         m = Convert.ToInt32(Val(Isotope))
 
-        SpA = DirectCast(cDC(1).Item(1).Lambda, Double) * 6.0221413E+23 / m / 37000000000.0#
+        SpA = DirectCast(cDC(1).Item(1).Lambda, Double) * 6.0221413E+23 / m / 37000000000.0# * SIConv
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC)

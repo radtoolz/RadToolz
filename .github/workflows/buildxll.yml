@@ -1,35 +1,51 @@
-name: Build XLL
+name: Build and Package XLL
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Visual Studio
-      uses: microsoft/setup-msbuild@v1
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '4.8.1'
 
-    - name: Restore NuGet packages
-      run: nuget restore RadToolz.sln
+    - name: Restore dependencies
+      run: nuget restore
 
-    - name: Post-build steps for Excel-DNA 32-bit
+    - name: Build project (32-bit)
+      run: msbuild /p:Configuration=Release /p:Platform=x86
+
+    - name: Build project (64-bit)
+      run: msbuild /p:Configuration=Release /p:Platform=x64
+
+    - name: Package XLL (32-bit)
       run: |
-        msbuild /t:Build /p:Configuration=Release /p:Platform=x86 /p:OutputPath=Builds
-        ExcelDnaPack.exe /Y Builds\RadToolz-AddIn.dna /O Builds\RadToolz-AddIn.xll
+        $excelDnaPack = "${{ github.workspace }}\packages\ExcelDNA.AddIn.1.8.0\tools\ExcelDnaPack.exe"
+        $dnaFile = "${{ github.workspace }}\RadToolz\bin\Release\x86\your.dna"
+        & $excelDnaPack $dnaFile /Y /O
 
-    - name: Post-build steps for Excel-DNA 64-bit
+    - name: Package XLL (64-bit)
       run: |
-        msbuild /t:Build /p:Configuration=Release /p:Platform=x64 /p:OutputPath=Builds
-        ExcelDnaPack.exe /Y Builds\RadToolz-AddIn.dna /O Builds\RadToolz-AddIn64.xll
+        $excelDnaPack = "${{ github.workspace }}\packages\ExcelDNA.AddIn.1.8.0\tools\ExcelDnaPack.exe"
+        $dnaFile = "${{ github.workspace }}\RadToolz\bin\Release\x64\your.dna"
+        & $excelDnaPack $dnaFile /Y /O
 
-    - name: List Builds folder contents
-      run: dir Builds
+    - name: Upload XLL binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: xll-binaries
+        path: |
+          ${{ github.workspace }}\RadToolz\bin\Release\x86\your.xll
+          ${{ github.workspace }}\RadToolz\bin\Release\x64\your-64.xll
