@@ -1,7 +1,4 @@
-﻿'Imports ExcelDna.Integration
-'Imports System
-
-Public Class DecaySeriesItem
+﻿Public Class DecaySeriesItem
     '* Author:      Backscatter enterprises
     '* Date:        10/23/2018
 
