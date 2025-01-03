@@ -38,7 +38,7 @@ jobs:
         & $excelDnaPack $dnaFile /Y /O /XLL64
 
     - name: Upload XLL binaries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: xll-binaries
         path: |
