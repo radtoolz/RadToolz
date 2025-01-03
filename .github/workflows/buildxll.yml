@@ -11,10 +11,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '4.8.1'
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
 
     - name: Restore dependencies
       run: nuget restore
@@ -44,3 +43,4 @@ jobs:
         path: |
           ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn-packed.xll
           ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn64-packed.xll
+
