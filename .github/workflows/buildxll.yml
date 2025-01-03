@@ -21,11 +21,8 @@ jobs:
     - name: Restore dependencies
       run: nuget restore
 
-    - name: Build project (32-bit)
-      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform=x86
-
-    - name: Build project (64-bit)
-      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform=x64
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Package XLL (32-bit)
       run: |
