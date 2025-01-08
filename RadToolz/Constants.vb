@@ -4,7 +4,7 @@ Module Constants
     '* Author:      Backscatter enterprises
     '* Date:        1/1/2025
 
-    Public Const RadToolzVersion As Double = 4.0
+    Public Const RadToolzVersion As Double = 4.01
     Public Const RadToolzPreRelease As String = "" 'α ß Γ π Σ σ µ
     Public Const maxBranches As Integer = 50
     Public iExcel As Object = ExcelDnaUtil.Application
