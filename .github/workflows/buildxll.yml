@@ -37,11 +37,11 @@ jobs:
 #        & $excelDnaPack $dnaFile /Y /O /XLL64
 
     - name: Upload XLL binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xll-binaries
         path: |
-          ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn-packed.xll
-          ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn64-packed.xll
+          ${{ github.workspace }}\RadToolz\Build\RadToolz-AddIn-packed.xll
+          ${{ github.workspace }}\RadToolz\Build\RadToolz-AddIn64-packed.xll
 
 
