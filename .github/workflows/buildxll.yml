@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
       run: nuget restore
 
     - name: Build project
-      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU"
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
