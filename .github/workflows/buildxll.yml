@@ -24,24 +24,11 @@ jobs:
     - name: Build project
       run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU"
 
-#    - name: Package XLL (32-bit)
-#      run: |
-#        $excelDnaPack = "${{ github.workspace }}\packages\ExcelDna.AddIn.1.8.0\tools\ExcelDnaPack.exe"
-#        $dnaFile = "${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn.dna"
-#        & $excelDnaPack $dnaFile /Y /O /XLL32
-
-#    - name: Package XLL (64-bit)
-#      run: |
-#        $excelDnaPack = "${{ github.workspace }}\packages\ExcelDna.AddIn.1.8.0\tools\ExcelDnaPack.exe"
-#        $dnaFile = "${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn64.dna"
-#        & $excelDnaPack $dnaFile /Y /O /XLL64
-
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
       with:
         name: xll-binaries
         path: |
-          ${{ github.workspace }}\RadToolz\Build\RadToolz-AddIn-packed.xll
-          ${{ github.workspace }}\RadToolz\Build\RadToolz-AddIn64-packed.xll
-
+          #${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+          #${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
 
