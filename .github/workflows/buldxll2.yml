@@ -24,6 +24,9 @@ jobs:
     - name: Build project
       run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
+    - name: List output directory contents
+      run: dir ${{ github.workspace }}/RadToolz/bin/Release
+
     - name: Set output paths
       run: |
         echo "XLL32_PATH=${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll" >> $GITHUB_ENV
