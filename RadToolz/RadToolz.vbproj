@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.props" Condition="Exists('..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.props')" />
+  <Import Project="..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.props" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -11,7 +11,7 @@
     <AssemblyName>RadToolz</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>
-    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <NuGetPackageImportStamp>
@@ -52,18 +52,20 @@
   <ItemGroup>
     <Reference Include="DnsClient, Version=1.8.0.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
       <HintPath>..\packages\DnsClient.1.8.0\lib\net472\DnsClient.dll</HintPath>
+      <Private>True</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="ExcelDna.Integration, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.Integration.1.8.0\lib\net452\ExcelDna.Integration.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.Integration.1.9.0-alpha3\lib\net462\ExcelDna.Integration.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDna.IntelliSense, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.IntelliSense.1.8.0\lib\net452\ExcelDna.IntelliSense.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.IntelliSense.1.9.0-alpha3\lib\net462\ExcelDna.IntelliSense.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDna.Registration, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.Registration.1.8.0\lib\net452\ExcelDna.Registration.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.Registration.1.9.0-alpha3\lib\net462\ExcelDna.Registration.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDna.Registration.VisualBasic, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.Registration.VisualBasic.1.8.0\lib\net452\ExcelDna.Registration.VisualBasic.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.Registration.VisualBasic.1.9.0-alpha3\lib\net462\ExcelDna.Registration.VisualBasic.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Office.interop.access.dao, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
@@ -82,17 +84,33 @@
       <HintPath>..\packages\ExcelDna.Interop.15.0.1\lib\net452\Office.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Buffers, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.6.0\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
@@ -127,6 +145,7 @@
     </Compile>
     <Compile Include="ProcessDecaySeries.vb" />
     <Compile Include="RadToolzFunctions.vb" />
+    <Compile Include="WindowsDNSFunctions.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
@@ -165,14 +184,14 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.props'))" />
-    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.targets'))" />
     <Error Condition="!Exists('..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets'))" />
     <Error Condition="!Exists('..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets'))" />
+    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.props'))" />
+    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.targets'))" />
   </Target>
-  <Import Project="..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.targets" Condition="Exists('..\packages\ExcelDna.AddIn.1.8.0\build\ExcelDna.AddIn.targets')" />
   <Import Project="..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets" Condition="Exists('..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" />
   <Import Project="..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets" Condition="Exists('..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets')" />
+  <Import Project="..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.targets" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0-alpha3\build\ExcelDna.AddIn.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
