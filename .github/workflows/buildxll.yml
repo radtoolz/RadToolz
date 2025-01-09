@@ -29,6 +29,6 @@ jobs:
       with:
         name: xll-binaries
         path: |
-          #${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
-          #${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+          ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+          ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
 
