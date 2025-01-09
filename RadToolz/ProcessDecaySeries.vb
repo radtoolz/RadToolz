@@ -4420,7 +4420,7 @@ HandleErrors:
 
     Private Shared Function ReferenceToRange(<ExcelArgument(AllowReference:=True)> xlref As Object) As Object
         Dim strAddress As String = DirectCast(XlCall.Excel(XlCall.xlfReftext, xlref, True), String)
-        ReferenceToRange = ExcelDnaUtil.Application.range(strAddress)
+        ReferenceToRange = ExcelDnaUtil.Application.Range(strAddress)
     End Function
 
     Public Function VerifyIsotope(uIsotope As String) As Boolean
