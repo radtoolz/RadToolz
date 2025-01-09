@@ -67,7 +67,7 @@
       Enable/Disable packing of .dna files
     -->
     <RunExcelDnaPack Condition="'$(RunExcelDnaPack)' == ''">true</RunExcelDnaPack>
-
+    
     <!--
       Suffix used for packed .xll files e.g. MyAddIn-packed.xll
     -->
@@ -82,5 +82,6 @@
     <!--<ExcelDnaPackRunMultithreaded  Condition="'$(ConfigurationName)' == 'Debug'">false</ExcelDnaPackRunMultithreaded>-->
     <!--<ExcelDnaPackCompressResources Condition="'$(ConfigurationName)' == 'Release'">false</ExcelDnaPackCompressResources>-->
     <!--<ExcelDnaPackRunMultithreaded  Condition="'$(ConfigurationName)' == 'Release'">false</ExcelDnaPackRunMultithreaded>-->
+    <ExcelDnaPackCompressResources>false</ExcelDnaPackCompressResources>
   </PropertyGroup>
 </Project>
