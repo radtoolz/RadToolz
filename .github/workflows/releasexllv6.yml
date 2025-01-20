@@ -54,13 +54,6 @@ jobs:
       run: |
         choco install gh -y
 
-    # Authenticate GitHub CLI
-    - name: Authenticate GitHub CLI
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo $GITHUB_TOKEN | gh auth login --with-token
-
     # Create a new release
     - name: Create release
       id: create_release
@@ -68,14 +61,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         $hashes = Get-Content sha256.txt -Raw
-        gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
+        gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes" --repo ${{ github.repository }} --token $GITHUB_TOKEN
 
     # List release assets
     - name: List release assets
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name' --repo ${{ github.repository }} --token $GITHUB_TOKEN
 
     # Create attestations
     - name: Create attestations
