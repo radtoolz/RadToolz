@@ -25,10 +25,16 @@ jobs:
         echo "$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_PATH
 
     - name: Restore dependencies
-      run: nuget restore
+      run: |
+        $msbuildPath = $(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin
+        $env:PATH += ";$msbuildPath"
+        nuget restore
 
     - name: Build project
-      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
+      run: |
+        $msbuildPath = $(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin
+        $env:PATH += ";$msbuildPath"
+        msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
     - name: Debug - List files
       run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
@@ -49,14 +55,3 @@ jobs:
     - name: List release assets
       run: |
         gh release view v4.01 --json assets --jq '.assets[].name'
-
-
-
-
-
-
-
-
-
-
-
