@@ -24,6 +24,9 @@ jobs:
     - name: Build project
       run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
+    - name: Debug - List files
+      run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
+
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
@@ -57,3 +60,9 @@ jobs:
         asset_path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
         asset_name: RadToolz-AddIn64-packed.xll
         asset_content_type: application/octet-stream
+
+    - name: List release assets
+      run: |
+        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+             -H "Accept: application/vnd.github.v3+json" \
+             https://api.github.com/repos/${{ github.repository }}/releases/tags/v4.01
