@@ -1,4 +1,4 @@
-name: Build and Release XLL v.4
+name: Build and Release XLL v.3
 
 on:
   workflow_dispatch:
@@ -15,9 +15,8 @@ jobs:
       run: |
         choco install netfx-4.8.1-devpack -y
 
-    - name: Install Visual Studio Build Tools
-      run: |
-        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.MSBuildTools --includeRecommended --includeOptional" -y
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Set MSBuild environment variable
       run: |
@@ -25,16 +24,10 @@ jobs:
         echo "$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_PATH
 
     - name: Restore dependencies
-      run: |
-        $msbuildPath = $(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin
-        $env:PATH += ";$msbuildPath"
-        nuget restore
+      run: nuget restore
 
     - name: Build project
-      run: |
-        $msbuildPath = $(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin
-        $env:PATH += ";$msbuildPath"
-        msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
     - name: Debug - List files
       run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
@@ -55,3 +48,16 @@ jobs:
     - name: List release assets
       run: |
         gh release view v4.01 --json assets --jq '.assets[].name'
+
+
+
+
+
+
+
+
+
+
+
+
+
