@@ -37,8 +37,10 @@ jobs:
 
     - name: Set release upload URL
       run: echo "UPLOAD_URL=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_ENV
-
-    - name: Upload XLL binaries
+    - name: Test UPLOAD_URL
+      run:  echo ${{ env.UPLOAD_URL }}
+      
+    - name: Upload XLL binaries (32-bit)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
