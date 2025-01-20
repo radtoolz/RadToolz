@@ -44,7 +44,8 @@ jobs:
       run: |
         $hash1 = Get-FileHash ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll -Algorithm SHA256
         $hash2 = Get-FileHash ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll -Algorithm SHA256
-        "$($hash1.Hash)  RadToolz-AddIn-packed.xll" > sha256.txt
+        "SHA256 Hashes" > sha256.txt
+        "$($hash1.Hash)  RadToolz-AddIn-packed.xll" >> sha256.txt
         "$($hash2.Hash)  RadToolz-AddIn64-packed.xll" >> sha256.txt
         Get-Content sha256.txt
 
