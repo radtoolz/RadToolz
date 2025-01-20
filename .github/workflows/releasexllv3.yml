@@ -30,18 +30,21 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v.4.01
-        release_name: Release v.4.01
+        tag_name: v4.01
+        release_name: Release v4.01
         draft: false
         prerelease: false
+
+    - name: Set release upload URL
+      run: echo "UPLOAD_URL=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_ENV
 
     - name: Upload XLL binaries
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
         asset_name: RadToolz-AddIn-packed.xll
         asset_content_type: application/octet-stream
 
@@ -50,7 +53,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
         asset_name: RadToolz-AddIn64-packed.xll
         asset_content_type: application/octet-stream
