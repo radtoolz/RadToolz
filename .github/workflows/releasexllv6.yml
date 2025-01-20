@@ -11,9 +11,11 @@ on:
 jobs:
   build_and_release:
     runs-on: windows-latest
-    permissions:
+
+   permissions:
       id-token: write
-      contents: write
+      contents: read
+      attestations: write
 
     steps:
     # Checkout the repository
@@ -57,86 +59,29 @@ jobs:
       run: |
         choco install gh -y
 
+    # Authenticate GitHub CLI
+    - name: Authenticate GitHub CLI
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
     # Create a new release
     - name: Create release
       id: create_release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         $hashes = Get-Content sha256.txt -Raw
         gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
-    # List release assets
-    - name: List release assets
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
-
-    # Create attestation for RadToolz-AddIn-packed.xll
-    - name: Create attestation for RadToolz-AddIn-packed.xll
-      uses: actions/attest@v2.1.0
+    - name: Generate artifact attestation (32-bit)
+      uses: actions/attest-build-provenance@v2
       with:
         subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
-        subject-name: RadToolz-AddIn-packed.xll
-        predicate-type: https://slsa.dev/provenance/v1
-        predicate: |
-          {
-            "buildType": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master",
-            "builder": {
-              "id": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master"
-            },
-            "invocation": {
-              "configSource": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master",
-              "parameters": {
-                "version": "${{ github.event.inputs.version }}"
-              },
-              "environment": {
-                "github_run_id": "${{ github.run_id }}",
-                "github_run_attempt": "${{ github.run_attempt }}",
-                "github_sha": "${{ github.sha }}",
-                "github_ref": "${{ github.ref }}",
-                "github_repository": "${{ github.repository }}",
-                "github_actor": "${{ github.actor }}",
-                "github_event_name": "${{ github.event_name }}",
-                "github_event_path": "${{ github.event_path }}".replace(/\\/g, "\\\\"),
-                "github_workspace": "${{ github.workspace }}".replace(/\\/g, "\\\\")
-              }
-            }
-          }
-        push-to-registry: false
-        show-summary: true
 
-    # Create attestation for RadToolz-AddIn64-packed.xll
-    - name: Create attestation for RadToolz-AddIn64-packed.xll
-      uses: actions/attest@v2.1.0
+    - name: Generate artifact attestation (32-bit)
+      uses: actions/attest-build-provenance@v2
       with:
         subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
-        subject-name: RadToolz-AddIn64-packed.xll
-        predicate-type: https://slsa.dev/provenance/v1
-        predicate: |
-          {
-            "buildType": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master",
-            "builder": {
-              "id": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master"
-            },
-            "invocation": {
-              "configSource": "https://github.com/radtoolz/RadToolz/.github/workflows/releasexllv6.yml@refs/heads/master",
-              "parameters": {
-                "version": "${{ github.event.inputs.version }}"
-              },
-              "environment": {
-                "github_run_id": "${{ github.run_id }}",
-                "github_run_attempt": "${{ github.run_attempt }}",
-                "github_sha": "${{ github.sha }}",
-                "github_ref": "${{ github.ref }}",
-                "github_repository": "${{ github.repository }}",
-                "github_actor": "${{ github.actor }}",
-                "github_event_name": "${{ github.event_name }}",
-                "github_event_path": "${{ github.event_path }}".replace(/\\/g, "\\\\"),
-                "github_workspace": "${{ github.workspace }}".replace(/\\/g, "\\\\")
-              }
-            }
-          }
-        push-to-registry: false
-        show-summary: true
+
+    # List release assets
+    - name: List release assets
+      run: |
+        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
