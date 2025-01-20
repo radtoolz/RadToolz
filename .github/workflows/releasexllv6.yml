@@ -11,8 +11,7 @@ on:
 jobs:
   build_and_release:
     runs-on: windows-latest
-
-   permissions:
+    permissions:
       id-token: write
       contents: read
       attestations: write
@@ -71,12 +70,14 @@ jobs:
         $hashes = Get-Content sha256.txt -Raw
         gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
+    # Generate artifact attestation (32-bit)
     - name: Generate artifact attestation (32-bit)
       uses: actions/attest-build-provenance@v2
       with:
         subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
 
-    - name: Generate artifact attestation (32-bit)
+    # Generate artifact attestation (64-bit)
+    - name: Generate artifact attestation (64-bit)
       uses: actions/attest-build-provenance@v2
       with:
         subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
@@ -85,4 +86,3 @@ jobs:
     - name: List release assets
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
-
