@@ -56,33 +56,40 @@ jobs:
 
     # Authenticate GitHub CLI
     - name: Authenticate GitHub CLI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        echo $GITHUB_TOKEN | gh auth login --with-token
 
     # Create a new release
     - name: Create release
       id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         $hashes = Get-Content sha256.txt -Raw
         gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
     # List release assets
     - name: List release assets
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
 
     # Create attestations
     - name: Create attestations
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v2.1.0
       with:
-        artifacts: |
-          ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
-          ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
-        provenance: |
-          name: RadToolz
-          version: ${{ github.event.inputs.version }}
-          builder: GitHub Actions
-          buildType: https://github.com/actions/attest-build-provenance
-          materials:
-            - ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
-            - ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+        subject-digest: ${{ steps.calculate_hashes.outputs.hash1 }}
+        subject-name: RadToolz-AddIn-packed.xll
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create attestations (64-bit)
+      uses: actions/attest-build-provenance@v2.1.0
+      with:
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        subject-digest: ${{ steps.calculate_hashes.outputs.hash2 }}
+        subject-name: RadToolz-AddIn64-packed.xll
+        github-token: ${{ secrets.GITHUB_TOKEN }}
