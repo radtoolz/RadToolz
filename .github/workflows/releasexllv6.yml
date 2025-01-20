@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       id-token: write
-      contents: read
+      contents: write
       attestations: write
 
     steps:
@@ -86,3 +86,4 @@ jobs:
     - name: List release assets
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+
