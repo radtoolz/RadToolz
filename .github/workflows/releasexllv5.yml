@@ -32,7 +32,7 @@ jobs:
 
     # Build the project
     - name: Build project
-      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
 
     # Debug - List files in the output directory
     - name: Debug - List files
