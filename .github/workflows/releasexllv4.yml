@@ -15,13 +15,15 @@ jobs:
       run: |
         choco install netfx-4.8.1-devpack -y
 
-    - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+    - name: Install Visual Studio Build Tools
+      run: |
+        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.MSBuildTools --includeRecommended --includeOptional" -y
 
     - name: Set MSBuild environment variable
       run: |
         echo "MSBUILD_PATH=$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_ENV
-       
+        echo "$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_PATH
+
     - name: Restore dependencies
       run: nuget restore
 
@@ -47,3 +49,14 @@ jobs:
     - name: List release assets
       run: |
         gh release view v4.01 --json assets --jq '.assets[].name'
+
+
+
+
+
+
+
+
+
+
+
