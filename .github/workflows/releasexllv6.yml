@@ -42,6 +42,18 @@ jobs:
     - name: Debug - List files
       run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
 
+    # Generate artifact attestation (32-bit)
+    - name: Generate artifact attestation (32-bit)
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+
+    # Generate artifact attestation (64-bit)
+    - name: Generate artifact attestation (64-bit)
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+
     # Calculate SHA-256 hashes
     - name: Calculate SHA-256 hashes
       id: calculate_hashes
@@ -70,17 +82,7 @@ jobs:
         $hashes = Get-Content sha256.txt -Raw
         gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
-    # Generate artifact attestation (32-bit)
-    - name: Generate artifact attestation (32-bit)
-      uses: actions/attest-build-provenance@v2
-      with:
-        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
 
-    # Generate artifact attestation (64-bit)
-    - name: Generate artifact attestation (64-bit)
-      uses: actions/attest-build-provenance@v2
-      with:
-        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
 
     # List release assets
     - name: List release assets
