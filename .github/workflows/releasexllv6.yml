@@ -77,7 +77,8 @@ jobs:
     - name: Create attestation for RadToolz-AddIn-packed.xll
       uses: actions/attest@v2.1.0
       with:
-        subject: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+        subject-name: RadToolz-AddIn-packed.xll
         predicate-type: https://slsa.dev/provenance/v1
         predicate: |
           {
@@ -110,7 +111,8 @@ jobs:
     - name: Create attestation for RadToolz-AddIn64-packed.xll
       uses: actions/attest@v2.1.0
       with:
-        subject: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        subject-name: RadToolz-AddIn64-packed.xll
         predicate-type: https://slsa.dev/provenance/v1
         predicate: |
           {
@@ -138,3 +140,4 @@ jobs:
           }
         push-to-registry: false
         show-summary: true
+
