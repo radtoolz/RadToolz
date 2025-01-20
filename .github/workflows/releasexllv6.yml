@@ -85,3 +85,4 @@ jobs:
     - name: List release assets
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+
