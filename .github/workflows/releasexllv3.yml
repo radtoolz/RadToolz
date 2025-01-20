@@ -1,4 +1,4 @@
-name: Build and Release XLL v.1
+name: Build and Release XLL v.3
 
 on:
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/
         asset_name: RadToolz-AddIn-packed.xll
         asset_content_type: application/octet-stream
 
@@ -51,6 +51,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        asset_path: ${{ github.workspace }}/RadToolz/bin/Release/
         asset_name: RadToolz-AddIn64-packed.xll
         asset_content_type: application/octet-stream
