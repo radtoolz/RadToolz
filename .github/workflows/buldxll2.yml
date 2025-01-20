@@ -37,5 +37,5 @@ jobs:
       with:
         name: xll-binaries
         path: |
-          ${{ env.XLL32_PATH }}
-          ${{ env.XLL64_PATH }}
+          ${{ GITHUB_ENV.XLL32_PATH }}
+          ${{ GITHUB_ENV.XLL64_PATH }}
