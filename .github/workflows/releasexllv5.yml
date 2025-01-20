@@ -2,9 +2,14 @@ name: Build and Release XLL v.5
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v4.01'
 
 jobs:
-  build:
+  build_and_release:
     runs-on: windows-latest
 
     steps:
@@ -33,6 +38,14 @@ jobs:
     - name: Debug - List files
       run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
 
+    # Calculate SHA-256 hashes
+    - name: Calculate SHA-256 hashes
+      id: calculate_hashes
+      run: |
+        sha256sum ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll > sha256.txt
+        sha256sum ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll >> sha256.txt
+        cat sha256.txt
+
     # Install GitHub CLI
     - name: Install GitHub CLI
       run: |
@@ -47,9 +60,13 @@ jobs:
     - name: Create release
       id: create_release
       run: |
-        gh release create v5.0 ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "Release v5.0" --notes "Release v5.0"
+        hashes=$(cat sha256.txt)
+        gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "Release ${{ github.event.inputs.version }}" --notes "Release ${{ github.event.inputs.version }}\n\n$hashes"
 
     # List release assets
     - name: List release assets
       run: |
-        gh release view v5.0 --json assets --jq '.assets[].name'
+        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+
+
+
