@@ -99,8 +99,8 @@ jobs:
                 "github_repository": "${{ github.repository }}",
                 "github_actor": "${{ github.actor }}",
                 "github_event_name": "${{ github.event_name }}",
-                "github_event_path": "${{ github.event_path }}",
-                "github_workspace": "${{ github.workspace }}"
+                "github_event_path": "${{ github.event_path }}".replace(/\\/g, "\\\\"),
+                "github_workspace": "${{ github.workspace }}".replace(/\\/g, "\\\\")
               }
             }
           }
@@ -133,11 +133,10 @@ jobs:
                 "github_repository": "${{ github.repository }}",
                 "github_actor": "${{ github.actor }}",
                 "github_event_name": "${{ github.event_name }}",
-                "github_event_path": "${{ github.event_path }}",
-                "github_workspace": "${{ github.workspace }}"
+                "github_event_path": "${{ github.event_path }}".replace(/\\/g, "\\\\"),
+                "github_workspace": "${{ github.workspace }}".replace(/\\/g, "\\\\")
               }
             }
           }
         push-to-registry: false
         show-summary: true
-
