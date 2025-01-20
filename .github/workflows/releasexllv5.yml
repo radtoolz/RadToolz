@@ -1,4 +1,4 @@
-name: Build and Release XLL v.4
+name: Build and Release XLL v.5
 
 on:
   workflow_dispatch:
@@ -8,56 +8,48 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    # Checkout the repository
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    # Set up .NET Framework 4.8.1
     - name: Set up .NET Framework 4.8.1
       run: |
         choco install netfx-4.8.1-devpack -y
 
+    # Set up MSBuild
     - name: Set up MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
 
-    - name: Set MSBuild environment variable
-      run: |
-        echo "MSBUILD_PATH=$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_ENV
-        echo "$(vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath -format value)/MSBuild/Current/Bin" >> $GITHUB_PATH
-
+    # Restore dependencies
     - name: Restore dependencies
       run: nuget restore
 
+    # Build the project
     - name: Build project
       run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false
 
+    # Debug - List files in the output directory
     - name: Debug - List files
       run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
 
+    # Install GitHub CLI
     - name: Install GitHub CLI
       run: |
         choco install gh -y
 
+    # Authenticate GitHub CLI
     - name: Authenticate GitHub CLI
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
+    # Create a new release
     - name: Create release
       id: create_release
       run: |
-        gh release create v4.01 ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "Release v4.01" --notes "Release v4.01"
+        gh release create v5.0 ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "Release v5.0" --notes "Release v5.0"
 
+    # List release assets
     - name: List release assets
       run: |
-        gh release view v4.01 --json assets --jq '.assets[].name'
-
-
-
-
-
-
-
-
-
-
-
-
-
+        gh release view v5.0 --json assets --jq '.assets[].name'
