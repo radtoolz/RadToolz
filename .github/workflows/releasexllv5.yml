@@ -64,7 +64,7 @@ jobs:
       id: create_release
       run: |
         $hashes = Get-Content sha256.txt -Raw
-        gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "Release ${{ github.event.inputs.version }}" --notes "Release ${{ github.event.inputs.version }}`n`n$hashes"
+        gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
     # List release assets
     - name: List release assets
