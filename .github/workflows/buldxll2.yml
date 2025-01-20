@@ -31,11 +31,16 @@ jobs:
       run: |
         echo "XLL32_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll" >> $GITHUB_ENV
         echo "XLL64_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll" >> $GITHUB_ENV
+    - name:  Test XLL32 output path 
+      run: echo ${{ env.XLL32_PATH }}
+
+    - name:  Test XLL64 output path
+      run:  echo ${{ env.XLL64_PATH }}
         
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
       with:
         name: xll-binaries
         path: |
-          ${{ GITHUB_ENV.XLL32_PATH }}
-          ${{ GITHUB_ENV.XLL64_PATH }}
+          ${{ env.XLL32_PATH }}
+          ${{ env.XLL64_PATH }}
