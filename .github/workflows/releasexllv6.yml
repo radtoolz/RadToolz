@@ -57,12 +57,16 @@ jobs:
     # Create a new release
     - name: Create release
       id: create_release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         $hashes = Get-Content sha256.txt -Raw
         gh release create ${{ github.event.inputs.version }} ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll --title "${{ github.event.inputs.version }}" --notes "$hashes"
 
     # List release assets
     - name: List release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
 
@@ -70,13 +74,13 @@ jobs:
     - name: Create attestations
       uses: actions/attest-build-provenance@v2.1.0
       with:
-        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
-        subject-digest: ${{ steps.calculate_hashes.outputs.hash1 }}
-        subject-name: RadToolz-AddIn-packed.xll
+        subject: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn-packed.xll
+        name: RadToolz-AddIn-packed.xll
+        digest: ${{ steps.calculate_hashes.outputs.hash1 }}
 
     - name: Create attestations (64-bit)
       uses: actions/attest-build-provenance@v2.1.0
       with:
-        subject-path: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
-        subject-digest: ${{ steps.calculate_hashes.outputs.hash2 }}
-        subject-name: RadToolz-AddIn64-packed.xll
+        subject: ${{ github.workspace }}/RadToolz/bin/Release/RadToolz-AddIn64-packed.xll
+        name: RadToolz-AddIn64-packed.xll
+        digest: ${{ steps.calculate_hashes.outputs.hash2 }}
