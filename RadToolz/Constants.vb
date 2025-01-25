@@ -1,6 +1,6 @@
 ﻿Imports ExcelDna.Integration
 
-Module Constants
+Friend Module Constants
     '* Author:      Backscatter enterprises
     '* Date:        1/25/2025
 
