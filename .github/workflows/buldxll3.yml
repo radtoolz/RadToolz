@@ -5,7 +5,7 @@ on:
       version:
         description: 'Release version'
         required: true
-        default: 'v4.01'
+        default: 'v4.02'
 
 jobs:
   build_and_release:
