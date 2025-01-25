@@ -1194,27 +1194,24 @@ HandleErrors:
         'ASSERT:  vers can be converted to a double
         versNum = Convert.ToDouble(vers)
 
+#Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
             Msg = ("RadToolz is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-#Disable Warning IDE0058 ' Expression value is never used
+
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-#Enable Warning IDE0058 ' Expression value is never used
             vers = "Current RadToolz version is " & vers & "."
         ElseIf versNum < RadToolzVersion Then ' Pre-release version
-#Disable Warning IDE0048 ' Add parentheses for clarity
-            vers = "RadToolz is now at version " + vers + ".  You have pre-release version " & RTZVers().ToString
-#Enable Warning IDE0048 ' Add parentheses for clarity
+            vers = ("RadToolz is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
         ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
             Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version and should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-#Disable Warning IDE0058 ' Expression value is never used
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-#Enable Warning IDE0058 ' Expression value is never used
             vers = "Current RadToolz version is " & vers & "."
         Else ' Current release version
             vers = "RadToolz is up to date." & no_input
         End If
+#Enable Warning IDE0058 ' Expression value is never used
 
         RTZUpdate = vers
 
