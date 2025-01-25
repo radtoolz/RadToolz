@@ -24,7 +24,7 @@ Public Module MyFunctions
         '*              optional Unit (e.g., Ci or TBq)
         '* Returns:     either A1 or A2 value
         '* Author:      Backscatter enterprises
-        '* Date:        10/29/2016
+        '* Date:        1/5/2025
 
         'Variables
         Dim pds As New ProcessDecaySeries
@@ -32,9 +32,6 @@ Public Module MyFunctions
         Dim Msg As String
         Dim cDC(0 To maxBranches) As Collection
         Dim AConv As Double, ATemp As Double
-
-        'Assume it goes bad
-        AValue = "#N/A"
 
         'fix for default values are not being stored in the function variable
         If Trim(Unit) = "" Or IsNothing(Unit) Then Unit = "TBQ"
@@ -550,7 +547,7 @@ HandleErrors:
         '*              TimeUnit either S, M, D, Y
         '* Returns:     Half-life in time unit
         '* Author:      Backscatter enterprises
-        '* Date:        8/3/2015
+        '* Date:        1/25/2025
 
         'Variables
         Dim k As Double
@@ -585,7 +582,7 @@ HandleErrors:
             Case "S"
                 k = 1
             Case "M"
-                k = k / 60
+                k /= 60
             Case "H"
                 k = k / 60 / 60
             Case "D"
@@ -706,7 +703,7 @@ HandleErrors:
         '*              TimeUnit - Seconds, Minutes, Hours, Days, or Years, default is seconds
         '* Returns:     Activity of TerminalMember after DecayTime, assuming 0 initial activity
         '* Author:      Backscatter enterprises
-        '* Date:        12/24/2024
+        '* Date:        1/25/2025
 
         'Variables
         Dim i As Double
@@ -753,7 +750,6 @@ HandleErrors:
         'Convert DecayTime to seconds
         TimeUnit = UCase(Left(TimeUnit, 1))
 
-        k = 1.0#
         Select Case TimeUnit
             Case "S"
                 k = 1.0#
@@ -769,7 +765,7 @@ HandleErrors:
                 RadDecay = "Invalid Time unit (S|M|H|D|Y)"
                 GoTo ExitHere
         End Select
-        DecayTime = DecayTime * k
+        DecayTime *= k
         '*Assert: DecayTime is now in seconds
 
         'Load decay chain
@@ -790,7 +786,7 @@ HandleErrors:
         'Loop for each branch
         For x = 1 To maxBranches
             'Branches are contiguous
-            If Not cDC(x) Is Nothing Then
+            If cDC(x) IsNot Nothing Then
                 If cDC(x).Count <> 0 Then numBranches = x
             End If
         Next x
@@ -811,7 +807,7 @@ HandleErrors:
             'Calculate BR
             BR = 1
             For i = 1 To n - 1
-                BR = BR * DirectCast(cDC(Branch).Item(i).BranchingRatio, Double)
+                BR *= DirectCast(cDC(Branch).Item(i).BranchingRatio, Double)
             Next i
 
             'Calculate Nnt
@@ -828,7 +824,7 @@ HandleErrors:
                         a = a * DirectCast(cDC(Branch).Item(j).Lambda, Double) / deltaLambda
                     End If
                 Next j
-                b = b + DirectCast(cDC(Branch).Item(i).Lambda, Double) * a * Math.E ^ (-DirectCast(cDC(Branch).Item(i).Lambda, Double) * DecayTime)
+                b += DirectCast(cDC(Branch).Item(i).Lambda, Double) * a * Math.E ^ (-DirectCast(cDC(Branch).Item(i).Lambda, Double) * DecayTime)
             Next i
 
             Nnt = ((N0 * BR / DirectCast(cDC(Branch).Item(n).Lambda, Double)) * b) + Nnt
@@ -902,6 +898,7 @@ HandleErrors:
         If Not bRsp Then GoTo HandleErrors
 
         bRsp = pds.GetDecayChain(Isotope, Isotope, cDC)
+        If Not bRsp Then GoTo HandleErrors
 
         'Strip trailing m from Isotope
         If Right(Isotope, 1) = "M" Then Isotope = Left(Isotope, Len(Isotope) - 1)
@@ -953,7 +950,7 @@ HandleErrors:
         '* Input:       x, y, z, h, L, SC, and u as specified above
         '* Returns:     Dilution factor s/m3
         '* Author:      Backscatter enterprises
-        '* Date:        12/30/2014
+        '* Date:        1/1/2025
 
         'Variables
 
@@ -990,7 +987,6 @@ HandleErrors:
         oz = TGSigma("z", PG, x)
 
         'Calculate k() values
-        n = 1
         k(0) = 1 / (2 * Math.PI * u * oy * oz)
         k(1) = Math.E ^ (-(y ^ 2) / (2 * oy ^ 2))
         k(2) = Math.E ^ (-((z - h) ^ 2) / (2 * oz ^ 2))
@@ -1070,7 +1066,7 @@ HandleErrors:
         '* Input:       uRngVal - cell address to begin data dump
         '* Returns:     Title including version
         '* Author:      Backscatter enterprises
-        '* Date:        10/29/2016
+        '* Date:        1/1/2025
 
         On Error GoTo HandleErrors
 
@@ -1084,7 +1080,7 @@ HandleErrors:
         Dim c As Integer
         Dim uRngVal As String = ""
         Dim pattern As String = "\](\w*)'?!(.*)"
-        Dim rRegex As Regex = New Regex(pattern)
+        Dim rRegex As New Regex(pattern)
         Dim m As Match
 
         'Ensure calling cell range and user defined range are not the same
@@ -1107,57 +1103,57 @@ HandleErrors:
         'Write Nuclear Functions 'r++ after each description
         iSheet.Cells(r, c) = "ANSIRound"
         iSheet.Cells(r, c + 1) = "Round a value in accordance with ANSI standard"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "AValue"
         iSheet.Cells(r, c + 1) = "A1 or A2 value (10 CFR 71 App A) for a radionuclide"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "DCF"
         iSheet.Cells(r, c + 1) = "Dose conversion factors (ICRP-68 or 72) for a radionuclide"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "FGE"
         iSheet.Cells(r, c + 1) = "Calculates U-235 or Pu-239 fissile gram equivalents"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "EnumDecayChain"
         iSheet.Cells(r, c + 1) = "List members of a decay chain (e.g., U-238 decay chain)"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "HalfLife"
         iSheet.Cells(r, c + 1) = "Half life for a radionuclide"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "PECi"
         iSheet.Cells(r, c + 1) = "Calculates the plutonium equivalent curies for a radionuclide"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RadDecay"
         iSheet.Cells(r, c + 1) = "Time decayed activity of a radionuclide or progeny"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "SigFig"
         iSheet.Cells(r, c + 1) = "Convert a value to specified number of significant digits"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "SpA"
         iSheet.Cells(r, c + 1) = "Specific activity for a radionuclide"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "XoQ"
         iSheet.Cells(r, c + 1) = "Calculate chi over q (atmospheric dispersion value)"
-        r = r + 1
+        r += 1
 
         'Write RadToolz Information Functions
         iSheet.Cells(r, c) = "RTZAttribution"
         iSheet.Cells(r, c + 1) = "Returns the preferred attribution to RadToolz for derivative works"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZFunctions"
         iSheet.Cells(r, c + 1) = "List RadToolz functions"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZLicense"
         iSheet.Cells(r, c + 1) = "Presents the RadToolz license from the Internet"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZParams"
         iSheet.Cells(r, c + 1) = "Displays the RadToolz radionuclide parameters in table form for verification and validation"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZRefs"
         iSheet.Cells(r, c + 1) = "Returns message box with references used by RadToolz"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZUpdate"
         iSheet.Cells(r, c + 1) = "Checks for updates to Radtoolz from the Internet"
-        r = r + 1
+        r += 1
         iSheet.Cells(r, c) = "RTZVers"
         iSheet.Cells(r, c + 1) = "Returns version of RadToolz being used"
 
@@ -1177,18 +1173,20 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Display RadToolz version number", Category:="RadToolz")>
+    <ExcelFunction(Description:="Display RadToolz version number", Category:="RadToolz", IsVolatile:=True)>
     Public Function RTZVers(
         <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
+        Optional no_input As String = "") _
         As Object
         '* Usage:       Reports back the version number of  RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        4/8/2016
+        '* Date:        1/25/2025
 
-        RTZVers = RadToolzVersion.ToString("0.00", Globalization.CultureInfo.InvariantCulture) & RadToolzPreRelease
+        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
+
+        RTZVers = RadToolzVersion.ToString("0.00", Globalization.CultureInfo.InvariantCulture) & RadToolzPreRelease & no_input
 
         Exit Function
 
@@ -1205,13 +1203,13 @@ HandleErrors:
     <ExcelFunction(Description:="Display RadToolz references", Category:="RadToolz")>
     Public Function RTZRefs(
         <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
+        Optional no_input As String = "") _
         As Object
         '* Usage:       Reports back the version number of the RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        12/29/2024
+        '* Date:        1/25/2025
 
         'Dim result As Boolean
         Dim Msg As String
@@ -1220,6 +1218,8 @@ HandleErrors:
         Dim GENII As String
         Dim ANSI8_1 As String
         Dim ANSI8_15 As String
+
+        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
         ENSDF = "Nuclide data and adapted equations are from:" & vbCrLf &
                 vbCrLf &
@@ -1252,7 +1252,7 @@ HandleErrors:
         Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15
         MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers())
 
-        RTZRefs = ""
+        RTZRefs = "" & no_input
 
         Exit Function
 
@@ -1270,7 +1270,7 @@ HandleErrors:
     <ExcelFunction(Description:="Display RadToolz license", Category:="RadToolz")>
     Public Function RTZLicense(
         <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
+        Optional no_input As String = "") _
         As Object
         '* Usage:       Opens Browser to RadToolzLicense
         '* Input:       None
@@ -1282,7 +1282,9 @@ HandleErrors:
         Dim Msg As Object
         Dim license As String = "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt"
 
-        Msg = MsgBox("Open browser for RadToolz license?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo, "RadToolz License")
+        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
+
+        Msg = MsgBox("Open browser for RadToolz license?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo, "RadToolz License") & no_input
         If Msg = vbYes Then Process.Start(license)
 
         RTZLicense = "RadToolz license may be found at " & license &
@@ -1345,18 +1347,18 @@ HandleErrors:
 
     End Function 'RTZListParams
 
-    <ExcelFunction(Description:="Return RadToolz attribution", Category:="RadToolz")>
+    <ExcelFunction(Description:="Return RadToolz attribution", Category:="RadToolz", IsVolatile:=True)>
     Public Function RTZAttribution(
         <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
+        Optional no_input As String = "") _
         As Object
         '* Usage:       Displays RadToolz Attribution
         '* Input:       None
         '* Returns:     Attribution text
         '* Author:      Backscatter enterprises
-        '* Date:        12/28/2024
+        '* Date:        1/25/2025
 
-        Dim Msg As Object = "None"
+        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
         RTZAttribution =
             "RadToolz version " & RTZVers() & ".  Copyright (c) " & Year(Now) & " " &
@@ -1365,13 +1367,13 @@ HandleErrors:
             "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt" & ".  " &
             "RadToolz is provided as-is and as-available.  No warranties are given " &
             "(see Disclaimer of Warranties and Limitation of Liability in the License). " &
-            "Based on a work at https://radtoolz.com"
+            "Based on a work at https://radtoolz.com" & no_input
 
         Exit Function
 
 HandleErrors:
         If Err.Number <> 0 Then
-            Msg = "Error # " & Str(Err.Number) & " was generated by " _
+            Dim Msg As Object = "Error # " & Str(Err.Number) & " was generated by " _
              & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
             MsgBox(Msg, MsgBoxStyle.Critical, "Error")
         End If
@@ -1470,16 +1472,16 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Determine the update status of RadToolz Add-In", Category:="RadToolz")>
+    <ExcelFunction(Description:="Determine the update status of RadToolz Add-In", Category:="RadToolz", IsVolatile:=True)>
     Public Function RTZUpdate(
         <ExcelArgument(Name:="None", Description:="No input required")>
-        Optional no_input As Object = Nothing) _
+        Optional no_input As String = "") _
         As Object
         '* Usage:       Checks DNS TXT record for RadToolz update
         '* Input:       None
         '* Returns:     Update status
         '* Author:      Backscatter enterprises
-        '* Date:        1/9/2025
+        '* Date:        1/25/2025
 
         On Error GoTo HandleErrors
 
@@ -1490,6 +1492,8 @@ HandleErrors:
         Dim result As Object
         Dim TxtRecord As Object
         Dim found As Boolean = False
+
+        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
         'Get version from DNS TXT record
         vers = GetTxtRecord("radtoolz.com", "version=")
@@ -1515,7 +1519,7 @@ HandleErrors:
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
             vers = "Current RadToolz version is " & vers & "."
         Else ' Current release version
-            vers = "RadToolz is up to date."
+            vers = "RadToolz is up to date." & no_input
         End If
 
         RTZUpdate = vers
