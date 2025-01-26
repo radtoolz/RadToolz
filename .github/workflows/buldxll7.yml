@@ -1,0 +1,50 @@
+name: Build and Package XLL v.7
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_package:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Restore dependencies
+      run: nuget restore
+
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
+
+    - name: List output directory contents
+      run: dir ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn*-packed.xll
+
+    - name: Test XLL32 output path
+      run: echo ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+      shell: pwsh
+
+    - name: Test XLL64 output path
+      run: echo ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+      shell: pwsh
+        
+    - name: Upload XLL binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: XLL-binaries
+        path: |
+              ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
+              ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+
+    - name: List uploaded artifacts
+      run: |
+        echo "Uploaded artifacts:"
+        gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[].name'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
