@@ -5,7 +5,7 @@ Friend Module Constants
     '* Date:        1/25/2025
 
     Public Const RadToolzVersion As Double = 4.02
-    Public Const RadToolzPreRelease As String = "α" 'α ß Γ π Σ σ µ
+    Public Const RadToolzPreRelease As String = "ß" 'α ß Γ π Σ σ µ
     Public Const maxBranches As Integer = 50
     Public iExcel As Object = ExcelDnaUtil.Application
 
