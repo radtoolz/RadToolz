@@ -25,18 +25,20 @@ jobs:
       run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
 
     - name: List output directory contents
-      run: dir ${{ github.workspace }}\Radtoolz\bin\Release
+      run: dir ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn*-packed.xll
 
     - name: Set output paths
       run: |
         echo "XLL32_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll" >> $GITHUB_ENV
         echo "XLL64_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll" >> $GITHUB_ENV
 
-    - name:  Test XLL32 output path 
-      run: echo ${{ env.XLL32_PATH }}
+    - name: Test XLL32 output path
+      run: Write-Output ${{ env.XLL32_PATH }}
+      shell: pwsh
 
-    - name:  Test XLL64 output path
-      run:  echo ${{ env.XLL64_PATH }}
+    - name: Test XLL64 output path
+      run: Write-Output ${{ env.XLL64_PATH }}
+      shell: pwsh
         
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
