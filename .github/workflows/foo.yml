@@ -10,5 +10,7 @@ jobs:
     steps:
 
     - name: Display environment variable FOO
-      env: FOO: "test"
-      run: echo $FOO
+      run: echo $env:FOO
+      env: 
+        FOO: "test"
+      
