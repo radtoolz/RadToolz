@@ -1,4 +1,4 @@
-﻿Imports System.Runtime.InteropServices
+Imports System.Runtime.InteropServices
 
 Public Module DnsFunctions
 
@@ -8,6 +8,8 @@ Public Module DnsFunctions
     Private Const DNS_QUERY_STANDARD As UInteger = 0
 
     ' Import DnsQuery_W from dnsapi.dll
+#Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
+
     <DllImport("dnsapi.dll", EntryPoint:="DnsQuery_W", CharSet:=CharSet.Unicode, SetLastError:=True)>
     Private Function DnsQuery(
         ByVal pszName As String,
@@ -16,13 +18,17 @@ Public Module DnsFunctions
         ByVal pExtra As IntPtr,
         ByRef ppQueryResults As IntPtr,
         ByVal pReserved As IntPtr) As Integer
+#Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
     End Function
 
     ' Import DnsRecordListFree from dnsapi.dll
+#Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
+
     <DllImport("dnsapi.dll", SetLastError:=True)>
     Private Sub DnsRecordListFree(
         ByVal pRecordList As IntPtr,
         ByVal freeType As Integer)
+#Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
     End Sub
 
     ' Structure for DNS TXT Record
@@ -43,6 +49,11 @@ Public Module DnsFunctions
          domain As String,
          prefix As String
     ) As String
+        ' Validate inputs
+        If String.IsNullOrWhiteSpace(domain) OrElse String.IsNullOrWhiteSpace(prefix) Then
+            Return "Invalid input parameters."
+        End If
+
         Dim pQueryResults As IntPtr = IntPtr.Zero
         Try
             ' Perform DNS query
@@ -65,7 +76,9 @@ Public Module DnsFunctions
                     txt = Marshal.PtrToStringUni(txtPointer)
 
                     ' Match the prefix
-                    If CType(txt.StartsWith(prefix), Boolean) Then
+#Disable Warning BC42016 ' Implicit conversion
+                    If txt.StartsWith(prefix) Then
+#Enable Warning BC42016 ' Implicit conversion
                         Return txt.Substring("version=".Length).Trim().ToString
                     End If
                 Next

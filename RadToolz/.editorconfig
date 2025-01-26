@@ -1,0 +1,17 @@
+# NOTE: Requires **VS2019 16.3** or later
+
+# JJP Ruleset
+# Description: This rule set contains all rules, with some naming rules turned off.
+
+# Code files
+[*.{cs,vb}]
+
+
+# Default severity for analyzer diagnostics - Requires **VS2019 16.5** or later
+dotnet_analyzer_diagnostic.severity = warning
+
+dotnet_diagnostic.CA1703.severity = none
+
+dotnet_diagnostic.CA1704.severity = none
+
+dotnet_diagnostic.CA1709.severity = none

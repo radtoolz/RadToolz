@@ -1,4 +1,4 @@
-name: Build and Release XLL v.6
+name: Build and Release XLL v.7
 
 on:
   workflow_dispatch:

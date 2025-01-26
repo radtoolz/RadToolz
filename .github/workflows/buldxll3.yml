@@ -1,0 +1,45 @@
+name: Build and Package XLL v.3
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v4.02'
+
+jobs:
+  build_and_release:
+    runs-on: windows-latest
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+
+    steps:
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Set up .NET Framework 4.8.1
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
+
+    # Set up MSBuild
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # Restore dependencies
+    - name: Restore dependencies
+      run: nuget restore
+
+    # Build the project
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=true /p:DebugType=none /p:DebugSymbols=false
+
+    # Debug - List files in the output directory
+    - name: Debug - List files
+      run: ls -R ${{ github.workspace }}/RadToolz/bin/Release
+
+
+
