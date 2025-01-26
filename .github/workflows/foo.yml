@@ -1,0 +1,15 @@
+name: Set and Display Environment Variable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set_and_display_variable:
+    runs-on: windows-latest
+
+    steps:
+    - name: Create environment variable FOO
+      run: echo "FOO=test" >> $GITHUB_ENV
+
+    - name: Display environment variable FOO
+      run: echo $FOO
