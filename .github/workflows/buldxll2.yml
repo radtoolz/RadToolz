@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_package:
+  build_and_package:
     runs-on: windows-latest
 
     steps:
