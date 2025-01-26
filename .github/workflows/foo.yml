@@ -8,8 +8,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Create environment variable FOO
-      run: echo "FOO=test" >> $GITHUB_ENV
 
     - name: Display environment variable FOO
+      env: FOO: "test"
       run: echo $FOO
