@@ -1,4 +1,4 @@
-name: Build and Package XLL v.5
+name: Build and Package XLL v.6
 
 on:
   workflow_dispatch:
@@ -35,13 +35,17 @@ jobs:
       run: echo ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
       shell: pwsh
         
-    - name: Upload XLL binaries
+    - name: Upload XLL32 binaries
       uses: actions/upload-artifact@v4
       with:
-        name: xll-binaries
-        path: |
-          ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
-          ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+        name: XLL32-binaries
+        path: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
+         
+    - name: Upload XLL64 binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: xll64-binaries
+        path: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
 
     - name: List uploaded artifacts
       run: |
