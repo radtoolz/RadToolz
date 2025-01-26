@@ -27,17 +27,12 @@ jobs:
     - name: List output directory contents
       run: dir ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn*-packed.xll
 
-    - name: Set output paths
-      run: |
-        echo "XLL32_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll" >> $GITHUB_ENV
-        echo "XLL64_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll" >> $GITHUB_ENV
-
     - name: Test XLL32 output path
-      run: echo $env:XLL32_PATH
+      run: echo ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
       shell: pwsh
 
     - name: Test XLL64 output path
-      run: echo $env:XLL64_PATH
+      run: echo ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
       shell: pwsh
         
     - name: Upload XLL binaries
@@ -45,8 +40,8 @@ jobs:
       with:
         name: xll-binaries
         path: |
-          ${{ env.XLL32_PATH }}
-          ${{ env.XLL64_PATH }}
+          ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
+          ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
 
     - name: List uploaded artifacts
       run: |
