@@ -14,6 +14,7 @@ jobs:
     - name: Set up .NET Framework 4.8.1
       run: |
         choco install netfx-4.8.1-devpack -y
+
     - name: Set up MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
 
