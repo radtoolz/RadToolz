@@ -6,9 +6,10 @@ on:
 jobs:
   set_and_display_variable:
     runs-on: windows-latest
-  env: 
-    FOO: "test"
+    env: 
+      FOO: "test"
 
-  steps:
+    steps:
     - name: Display global variable FOO
       run: echo $env:FOO
+      shell: pwsh
