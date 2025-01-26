@@ -44,6 +44,7 @@ jobs:
       run: |
         echo "XLL32_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll" >> $GITHUB_ENV
         echo "XLL64_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll" >> $GITHUB_ENV
+
     - name:  Test XLL32 output path 
       run: echo ${{ env.XLL32_PATH }}
 
