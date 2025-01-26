@@ -33,10 +33,12 @@ jobs:
         echo "XLL64_PATH=${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll" >> $GITHUB_ENV
 
     - name: Test XLL32 output path
-      run: echo "$XLL32_PATH"
+      run: echo $env:XLL32_PATH
+      shell: pwsh
 
     - name: Test XLL64 output path
-      run: echo "$XLL64_PATH"
+      run: echo $env:XLL64_PATH
+      shell: pwsh
         
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
@@ -45,3 +47,11 @@ jobs:
         path: |
           ${{ env.XLL32_PATH }}
           ${{ env.XLL64_PATH }}
+
+    - name: List uploaded artifacts
+      run: |
+        echo "Uploaded artifacts:"
+        gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[].name'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
