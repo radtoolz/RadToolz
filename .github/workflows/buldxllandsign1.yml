@@ -47,8 +47,8 @@ jobs:
         organization-id: 'f6014ada-0dd4-4a26-96a9-63fc6d1fbe1a'
         project-slug: 'RadToolz'
         signing-policy-slug: 'test-signing'
-        github-artifact-id: '${{ steps.upload-unsigned-artifact-32.outputs.artifact-id }}'
-        artifact-configuration-lug:  "RTZ-XLL"
+        github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+        artifact-configuration-slug: "RTZ-XLL"
         wait-for-completion: true
         output-artifact-directory: ${{ env.SIGNPATHDIR }}
 
