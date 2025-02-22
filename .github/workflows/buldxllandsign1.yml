@@ -1,0 +1,91 @@
+name: Build and Package XLL v.8
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_package:
+    runs-on: windows-latest
+    env: 
+      XLL32: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
+      XLL64: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
+
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Restore dependencies
+      run: nuget restore
+
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
+
+    - name: List output directory contents
+      run: |
+        dir ${{ env.XLL32 }}
+        dir ${{ env.XLL64 }}
+
+    - name: upload-unsigned-artifact-32
+      id: upload-unsigned-artifact
+      uses: actions/upload-artifact@v4
+      with: 
+        path: ${{ env.XLL32 }}
+
+    - id: submit-signing-request-32
+      uses: signpath/github-action-submit-signing-request@v1.1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: 'f6014ada-0dd4-4a26-96a9-63fc6d1fbe1a'
+        project-slug: 'RadToolz'
+        signing-policy-slug: 'test-signing'
+        github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+        wait-for-completion: true
+        output-artifact-directory: ${{ env.XLL32 }}
+
+    - name: upload-unsigned-artifact-64
+      id: upload-unsigned-artifact
+      uses: actions/upload-artifact@v4
+      with: 
+        path: ${{ env.XLL64 }}
+
+    - id: submit-signing-request-64
+      uses: signpath/github-action-submit-signing-request@v1.1
+      with:
+        api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+        organization-id: 'f6014ada-0dd4-4a26-96a9-63fc6d1fbe1a'
+        project-slug: 'RadToolz'
+        signing-policy-slug: 'test-signing'
+        github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+        wait-for-completion: true
+        output-artifact-directory: ${{ env.XLL64 }}
+
+    - name: Test XLL32 output path
+      run: echo $env:XLL32
+      shell: pwsh
+
+    - name: Test XLL64 output path
+      run: echo $env:XLL64
+      shell: pwsh
+        
+    - name: Upload XLL binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: XLL-binaries
+        path: |
+          ${{ env.XLL32 }}
+          ${{ env.XLL64 }}
+
+    - name: List uploaded artifacts
+      run: |
+        echo "Uploaded artifacts:"
+        gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[].name'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
