@@ -34,6 +34,9 @@ jobs:
       run: |
         dir ${{ env.XLL32 }}
         dir ${{ env.XLL64 }}
+        dir ${{ env.SIGNPATHDIR }}\*.zip
+        exit 1
+      shell:  pwsh
 
     - name: upload-unsigned-artifact
       id: upload-unsigned-artifact
