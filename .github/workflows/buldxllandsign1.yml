@@ -33,7 +33,7 @@ jobs:
         dir ${{ env.XLL64 }}
 
     - name: upload-unsigned-artifact-32
-      id: upload-unsigned-artifact
+      id: upload-unsigned-artifact-32
       uses: actions/upload-artifact@v4
       with: 
         path: ${{ env.XLL32 }}
@@ -50,7 +50,7 @@ jobs:
         output-artifact-directory: ${{ env.XLL32 }}
 
     - name: upload-unsigned-artifact-64
-      id: upload-unsigned-artifact
+      id: upload-unsigned-artifact-64
       uses: actions/upload-artifact@v4
       with: 
         path: ${{ env.XLL64 }}
