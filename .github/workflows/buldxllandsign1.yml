@@ -56,9 +56,7 @@ jobs:
         output-artifact-directory: RadToolz\bin\Release
 
     - name: List output directory contents
-      run: |
-        dir ${{ env.SIGNPATHDIR }}\*.zip
-        exit 1
+      run: dir ${{ env.SIGNPATHDIR }}\*.*
       shell:  pwsh
 
     - name: Delete artifact.zip
