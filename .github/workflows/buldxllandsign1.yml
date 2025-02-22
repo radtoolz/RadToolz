@@ -8,6 +8,7 @@ jobs:
     runs-on: windows-latest
     env: 
       SIGNPATHDIR: ${{ github.workspace }}\Radtoolz\bin\Release
+      SIGNPATHFILES: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-*-packed.xll
       XLL32: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
       XLL64: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
 
@@ -37,7 +38,7 @@ jobs:
       id: upload-unsigned-artifact
       uses: actions/upload-artifact@v4
       with: 
-        path: ${{ env.SIGNPATHDIR }}*-packed.xll
+        path: ${{ env.SIGNPATHFILES }}
 
     - id: submit-signing-request
       uses: signpath/github-action-submit-signing-request@v1.1
