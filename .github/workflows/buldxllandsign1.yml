@@ -47,7 +47,7 @@ jobs:
         project-slug: 'RadToolz'
         signing-policy-slug: 'test-signing'
         github-artifact-id: '${{ steps.upload-unsigned-artifact-32.outputs.artifact-id }}'
-        artifactConfigurationSlug:  "XLL"
+        artifactConfigurationSlug:  "RTZ-XLL"
         wait-for-completion: true
         output-artifact-directory: ${{ env.SIGNPATHDIR }}
 
