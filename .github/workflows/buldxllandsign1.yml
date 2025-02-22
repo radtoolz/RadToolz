@@ -7,6 +7,7 @@ jobs:
   build_and_package:
     runs-on: windows-latest
     env: 
+      SIGNPATHDIR: ${{ github.workspace }}\Radtoolz\bin\Release
       XLL32: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
       XLL64: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
 
@@ -32,13 +33,13 @@ jobs:
         dir ${{ env.XLL32 }}
         dir ${{ env.XLL64 }}
 
-    - name: upload-unsigned-artifact-32
-      id: upload-unsigned-artifact-32
+    - name: upload-unsigned-artifact
+      id: upload-unsigned-artifact
       uses: actions/upload-artifact@v4
       with: 
-        path: ${{ env.XLL32 }}
+        path: ${{ SIGNPATHDIR }}*-packed.xll
 
-    - id: submit-signing-request-32
+    - id: submit-signing-request
       uses: signpath/github-action-submit-signing-request@v1.1
       with:
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -46,26 +47,9 @@ jobs:
         project-slug: 'RadToolz'
         signing-policy-slug: 'test-signing'
         github-artifact-id: '${{ steps.upload-unsigned-artifact-32.outputs.artifact-id }}'
+        artifactConfigurationSlug:  "XLL"
         wait-for-completion: true
-        output-artifact-directory: ${{ env.XLL32 }}
-
-    - name: upload-unsigned-artifact-64
-      id: upload-unsigned-artifact-64
-      uses: actions/upload-artifact@v4
-      with: 
-        path: ${{ env.XLL64 }}
-
-    - id: submit-signing-request-64
-      uses: signpath/github-action-submit-signing-request@v1.1
-      with:
-        api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-        organization-id: 'f6014ada-0dd4-4a26-96a9-63fc6d1fbe1a'
-        project-slug: 'RadToolz'
-        signing-policy-slug: 'test-signing'
-        github-artifact-id: '${{ steps.upload-unsigned-artifact-64.outputs.artifact-id }}'
-        artifactConfigurationSlug:  "XLL32"
-        wait-for-completion: true
-        output-artifact-directory: ${{ env.XLL64 }}
+        output-artifact-directory: ${{ env.SIGNPATHDIR }}
 
     - name: Test XLL32 output path
       run: echo $env:XLL32
