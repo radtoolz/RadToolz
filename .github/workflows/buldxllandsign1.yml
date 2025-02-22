@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_package:
+  build_sign_and_package:
     runs-on: windows-latest
     env: 
       SIGNPATHDIR: ${{ github.workspace }}\Radtoolz\bin\Release
@@ -55,27 +55,17 @@ jobs:
         wait-for-completion: true
         output-artifact-directory: RadToolz\bin\Release
 
-    - name: List output directory contents
-      run: dir ${{ env.SIGNPATHDIR }}\*.*
+    - name: List output directory XLL
+      run: dir ${{ env.SIGNPATHDIR }}\*pack*.xll
       shell:  pwsh
-
-#    - name: Delete artifact.zip
-#      run: Remove-Item -Path ${{ env.SIGNPATHDIR }}\artifact.zip -Force
-#      shell: pwsh
-
-#    - name: Test XLL32 output path
-#      run: echo $env:XLL32
-#      shell: pwsh
-
-#    - name: Test XLL64 output path
-#      run: echo $env:XLL64
-#      shell: pwsh
         
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
       with:
         name: XLL-binaries
-        path: ${{ env.SIGNPATHDIR }}
+        path: |
+            ${{ env.XLL32 }}
+            ${{ env.XLL64 }}
 
     - name: List uploaded artifacts
       run: |
