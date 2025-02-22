@@ -51,12 +51,14 @@ jobs:
       run: dir ${{ env.ODIR }}
       shell: pwsh
 
-    - name: upload-unsigned-artifact
+    # Upload an artifact to SignPath.io
+      - name: upload-unsigned-artifact
       id: upload-unsigned-artifact
       uses: actions/upload-artifact@v4
       with: 
         path: ${{ env.SIGNPATHFILES }}
-
+    
+    # Submit a sign request for the XLLs and overwrite them in Release
     - id: submit-signing-request
       uses: signpath/github-action-submit-signing-request@v1.1
       with:
