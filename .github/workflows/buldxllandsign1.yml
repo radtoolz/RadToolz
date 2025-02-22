@@ -34,8 +34,7 @@ jobs:
       run: |
         dir ${{ env.XLL32 }}
         dir ${{ env.XLL64 }}
-        dir ${{ env.SIGNPATHDIR }}\*.zip
-        exit 1
+
       shell:  pwsh
 
     - name: upload-unsigned-artifact
@@ -55,6 +54,12 @@ jobs:
         artifact-configuration-slug: "RTZ-XLL"
         wait-for-completion: true
         output-artifact-directory: RadToolz\bin\Release
+
+    - name: List output directory contents
+      run: |
+        dir ${{ env.SIGNPATHDIR }}\*.zip
+        exit 1
+      shell:  pwsh
 
     - name: Delete artifact.zip
       run: Remove-Item -Path ${{ env.SIGNPATHDIR }}\artifact.zip -Force
