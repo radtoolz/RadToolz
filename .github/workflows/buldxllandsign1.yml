@@ -50,7 +50,7 @@ jobs:
         github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
         artifact-configuration-slug: "RTZ-XLL"
         wait-for-completion: true
-        output-artifact-directory: bin\Release
+        output-artifact-directory: RadToolz\bin\Release
 
     - name: Test XLL32 output path
       run: echo $env:XLL32
