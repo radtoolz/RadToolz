@@ -9,6 +9,7 @@ jobs:
     env: 
       SIGNPATHDIR: ${{ github.workspace }}\Radtoolz\bin\Release
       SIGNPATHFILES: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-*-packed.xll
+      XLLBINSPATH: ${{ github.workspace }}\Radtoolz\bin\Release\XLL-binaries.zip
       XLL32: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
       XLL64: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
 
@@ -64,9 +65,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: XLL-binaries
-        path: |
-          ${{ env.XLL32 }}
-          ${{ env.XLL64 }}
+        path: ${{ env.XLLBINSPATH }}
+
 
     - name: List uploaded artifacts
       run: |
