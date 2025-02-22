@@ -54,16 +54,16 @@ jobs:
         output-artifact-directory: RadToolz\bin\Release
 
     - name: Delete artifact.zip
-      run: Remove-Item -Path ${{ env.SIGNPATHDIR }}artifact.zip -Force
+      run: Remove-Item -Path ${{ env.SIGNPATHDIR }}\artifact.zip -Force
       shell: pwsh
 
-    - name: Test XLL32 output path
-      run: echo $env:XLL32
-      shell: pwsh
+#    - name: Test XLL32 output path
+#      run: echo $env:XLL32
+#      shell: pwsh
 
-    - name: Test XLL64 output path
-      run: echo $env:XLL64
-      shell: pwsh
+#    - name: Test XLL64 output path
+#      run: echo $env:XLL64
+#      shell: pwsh
         
     - name: Upload XLL binaries
       uses: actions/upload-artifact@v4
