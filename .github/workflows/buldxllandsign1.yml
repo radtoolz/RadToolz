@@ -59,9 +59,9 @@ jobs:
       run: dir ${{ env.SIGNPATHDIR }}\*.*
       shell:  pwsh
 
-    - name: Delete artifact.zip
-      run: Remove-Item -Path ${{ env.SIGNPATHDIR }}\artifact.zip -Force
-      shell: pwsh
+#    - name: Delete artifact.zip
+#      run: Remove-Item -Path ${{ env.SIGNPATHDIR }}\artifact.zip -Force
+#      shell: pwsh
 
 #    - name: Test XLL32 output path
 #      run: echo $env:XLL32
