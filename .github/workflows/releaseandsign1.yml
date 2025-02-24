@@ -52,7 +52,7 @@ jobs:
       shell: pwsh
 
     # Upload an artifact to SignPath.io
-      - name: upload-unsigned-artifact
+    - name: Upload unsigned artifact
       id: upload-unsigned-artifact
       uses: actions/upload-artifact@v4
       with: 
@@ -67,9 +67,9 @@ jobs:
         project-slug: 'RadToolz'
         signing-policy-slug: 'Release certificate 2025'
         github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
-        artifact-configuration-slug: "RTZ-XLL"
+        artifact-configuration-slug: 'RTZ-XLL'
         wait-for-completion: true
-        output-artifact-directory: RadToolz\bin\Release
+        output-artifact-directory: 'RadToolz\bin\Release'
 
     # Generate artifact attestation (32-bit)
     - name: Generate artifact attestation (32-bit)
@@ -120,3 +120,5 @@ jobs:
       run: |
         gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
       shell: pwsh
+
+
