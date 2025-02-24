@@ -63,9 +63,9 @@ jobs:
       uses: signpath/github-action-submit-signing-request@v1.1
       with:
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-        organization-id: 'f6014ada-0dd4-4a26-96a9-63fc6d1fbe1a'
+        organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
         project-slug: 'RadToolz'
-        signing-policy-slug: 'test-signing'
+        signing-policy-slug: 'Release certificate 2025'
         github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
         artifact-configuration-slug: "RTZ-XLL"
         wait-for-completion: true
