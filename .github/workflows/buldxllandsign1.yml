@@ -51,9 +51,9 @@ jobs:
         project-slug: 'RadToolz'
         signing-policy-slug: 'Release certificate 2025'
         github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
-        artifact-configuration-slug: "RTZ-XLL"
+        artifact-configuration-slug: 'RTZ-XLL'
         wait-for-completion: true
-        output-artifact-directory: RadToolz\bin\Release
+        output-artifact-directory: 'RadToolz\bin\Release'
 
     - name: List output directory XLL
       run: dir ${{ env.SIGNPATHDIR }}\*pack*.xll
