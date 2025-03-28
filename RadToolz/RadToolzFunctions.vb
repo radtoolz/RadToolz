@@ -1103,7 +1103,7 @@ HandleErrors:
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
+        '* Date:        3/28/2025
 
         Dim Msg As String
         Dim ENSDF As String
@@ -1111,6 +1111,7 @@ HandleErrors:
         Dim GENII As String
         Dim ANSI8_1 As String
         Dim ANSI8_15 As String
+        Dim XCOM As String
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
@@ -1142,7 +1143,16 @@ HandleErrors:
         ANSI8_15 = "    ANSI, 2014b.  Nuclear Criticality Safety Control of " & vbCrLf &
                    "    Selected Actinide Nuclides.  ANSI/ANS-8.15-2014 (R2019)." & vbCrLf & vbCrLf
 
-        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15
+        XCOM = "Photon mass attenuation coefficients derived from:" & vbCrLf &
+                vbCrLf &
+                "    Berger, M.J., Hubbell, J.H., Seltzer, S.M., Chang, J., Coursey, J.S.," & vbCrLf &
+                "    Sukumar, R., Zucker, D.S., Olsen, K., 2010. XCOM: Photon Cross" & vbCrLf &
+                "    Sections Database. NIST Standard Reference Database 8, Version 1.5." & vbCrLf &
+                "    https://www.nist.gov/pml/xcom-photon-cross-sections-database " & vbCrLf &
+                "    as of 3/28/2025" & vbCrLf & vbCrLf
+
+        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15 & XCOM
+
         Dim msgBoxResult As Object = MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers())
 
         RTZRefs = "" & no_input
@@ -1174,7 +1184,7 @@ HandleErrors:
         On Error GoTo HandleErrors
 
         Dim Msg As Object
-        Dim vers As String = "RTZ version not found."
+        Dim vers As String = "RTZ version Not found."
         Dim versNum As Double
         Dim txt As String
         Dim result As Object
@@ -1196,20 +1206,20 @@ HandleErrors:
 
 #Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
-            Msg = ("RadToolz is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
 
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
+            vers = "Current RadToolz version Is " & vers & "."
         ElseIf versNum < RadToolzVersion Then ' Pre-release version
-            vers = ("RadToolz is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
+            vers = ("RadToolz Is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
         ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
-            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version and should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
+            vers = "Current RadToolz version Is " & vers & "."
         Else ' Current release version
-            vers = "RadToolz is up to date." & no_input
+            vers = "RadToolz Is up to date." & no_input
         End If
 #Enable Warning IDE0058 ' Expression value is never used
 
@@ -1263,7 +1273,7 @@ HandleErrors:
 
     <ExcelFunction(Description:="Return Number to desired accuracy", Category:="RadToolz")>
     Public Function SigFig(
-        <ExcelArgument(Name:="Number", Description:="A number or expression of a number")>
+        <ExcelArgument(Name:="Number", Description:="A number Or expression of a number")>
         num As Double,
         <ExcelArgument(Name:="Significant Figures", Description:="Integer representing the desired number of significant figures")>
         sf As Integer) _
@@ -1286,11 +1296,11 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Specific activity (Ci/g) or (Bq/kg) for an isotope", Category:="RadToolz")>
+    <ExcelFunction(Description:="Specific activity (Ci/g) Or (Bq/kg) for an isotope", Category:="RadToolz")>
     Public Function SpA(
         <ExcelArgument(Name:="Isotope", Description:="Isotope of interest (e.g., U-238)")>
         Isotope As String,
-        <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0  = (Ci/g)  1 = (Bq/kg).")>
+        <ExcelArgument(Name:="(optional) SI", Description:="0 Or 1, default Is 0  = (Ci/g)  1 = (Bq/kg).")>
         Optional SI As Integer = 0) _
         As Object
         '* Usage:       Calculate Specific Activity for Isotope
@@ -1526,9 +1536,9 @@ HandleErrors:
     End Function
 
     'Mass Attenuation Coefficient
-    <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type and gamma energy.", Category:="RadToolz")>
+    <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type And gamma energy.", Category:="RadToolz")>
     Public Function MassAttenuation(
-        <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, or Water")>
+        <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, Or Water")>
         LongMaterial As String, ' Atomic number
         <ExcelArgument(Name:="Energy", Description:="Energy of the gamma radiation in MeV between 0.05 - 2.0 MeV")>
         Energy As Double ' Energy in MeV
@@ -1550,7 +1560,7 @@ HandleErrors:
 
         'Sanitize energy input
         If Energy < 0.05 Or Energy > 2.0# Then
-            Return "Energy out of range."
+            Return "Error: Energy out of range. Must be between 0.05 and 2.0 MeV"
             Exit Function
         End If
 
@@ -1605,7 +1615,7 @@ HandleErrors:
                 b3 = -2.91857691529
 
             Case Else
-                Return "Invalid material."
+                Return "Error: Invalid material. Must be Iron, Lead, Concrete, or Water."
                 Exit Function
 
         End Select
