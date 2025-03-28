@@ -1435,18 +1435,6 @@ HandleErrors:
 
     End Function 'XoQ
 
-    'SigFig
-
-    'RTZVers
-
-    'RTZRefs
-
-    'RTZLicense
-
-    'RTZListParams
-
-    'RTZAttribution
-
     Private Function TGSigma(Direction As String, PG As Integer, Distance As Double) As Double
 
         Dim ay(5) As Double
@@ -1537,6 +1525,93 @@ HandleErrors:
 
     End Function
 
-    'RTZUpdate
+    'Mass Attenuation Coefficient
+    <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type and gamma energy.", Category:="RadToolz")>
+    Public Function MassAttenuation(
+        <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, or Water")>
+        LongMaterial As String, ' Atomic number
+        <ExcelArgument(Name:="Energy", Description:="Energy of the gamma radiation in MeV between 0.05 - 2.0 MeV")>
+        Energy As Double ' Energy in MeV
+    ) As Object
+        '* Usage:       Calculates the mass attenuation coefficient
+        '* Input:       Type of shield, gamma energy
+        '* Returns:     Mass attenuation coefficient in cm^2/g
+        '* Author:      Backscatter enterprises
+        '* Date:        3/28/2025
+
+        Dim Material As String
+        Dim a0 As Double
+        Dim a1 As Double
+        Dim a2 As Double
+        Dim a3 As Double
+        Dim b1 As Double
+        Dim b2 As Double
+        Dim b3 As Double
+
+        'Sanitize energy input
+        If Energy < 0.05 Or Energy > 2.0# Then
+            Return "Energy out of range."
+            Exit Function
+        End If
+
+        'load coefficients
+        Material = UCase(Left(LongMaterial, 1))
+        Select Case Material
+            Case "I" 'iron
+                a0 = 0.00743295203
+                a1 = 0.09738991781
+                a2 = -0.04526362386
+                a3 = 0.00034872728
+                b1 = -0.76149637072
+                b2 = -1.00688588272
+                b3 = -2.87534113681
+
+            Case "L"
+
+                If Energy < 0.1 Then
+                    a0 = 42.15455105865
+                    a1 = -998.44722225718
+                    a2 = 6323.91543494432
+                    a3 = 0#
+                    b1 = 1.0#
+                    b2 = 2.0#
+                    b3 = 0#
+                Else
+                    a0 = 2.17776082501
+                    a1 = -1.10876399965
+                    a2 = -1.01125005597
+                    a3 = 0.01419822914
+                    b1 = 0.01114149885
+                    b2 = 0.01114170474
+                    b3 = -2.58336149644
+                End If
+
+            Case "W" 'water
+                a0 = -0.00074561909
+                a1 = -0.56195619194
+                a2 = 0.63188838754
+                a3 = 0.00142651792
+                b1 = -0.80773068662
+                b2 = -0.76896733486
+                b3 = -1.68199765411
+
+            Case "C" 'concrete/portland cement
+                a0 = -0.0086016241
+                a1 = 0.14926661004
+                a2 = -0.07659210367
+                a3 = 0.00003361636
+                b1 = -0.58833670263
+                b2 = -0.741715707
+                b3 = -2.91857691529
+
+            Case Else
+                Return "Invalid material."
+                Exit Function
+
+        End Select
+
+        Return SigFig(a0 + (a1 * (Energy ^ b1)) + (a2 * (Energy ^ b2)) + (a3 * (Energy ^ b3)), 4)
+
+    End Function
 
 End Module
