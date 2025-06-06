@@ -1037,8 +1037,7 @@ HandleErrors:
 #Enable Warning IDE0058 ' Expression value is never used
 
         RTZLicense = "RadToolz license may be found at " & license &
-            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt" &
-            "  DnsClient.NET license may be found at https://github.com/MichaCo/DnsClient.NET/blob/dev/LICENSE"
+            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt"
 
         Exit Function
 
@@ -1535,7 +1534,7 @@ HandleErrors:
 
     End Function
 
-    'Mass Attenuation Coefficient
+    'Mass Attenuation
     <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type And gamma energy.", Category:="RadToolz")>
     Public Function MassAttenuation(
         <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, Or Water")>
@@ -1622,6 +1621,87 @@ HandleErrors:
 
         Return SigFig(a0 + (a1 * (Energy ^ b1)) + (a2 * (Energy ^ b2)) + (a3 * (Energy ^ b3)), 4)
 
+    End Function
+
+    <ExcelFunction(Description:="Format analytical result and uncertainty as R.RR±U.UUE±NN.", Category:="RadToolz", IsMacroType:=True)>
+    Public Function RUFormat(
+        <ExcelArgument(Name:="Result", Description:="Analytical result.  Result will be displayed as < if less than uncertainty.")>
+        r As Double, ' result
+        <ExcelArgument(Name:="Uncertainty", Description:="Uncertainty of analytical result")>
+        u As Double, ' uncertainty
+        <ExcelArgument(Name:="(optional) Precision", Description:="Number of places after the decimal point.")>
+        Optional precision As Integer = 2
+    ) As Object
+        '* Usage:       Formats a result with uncertainty in the form "r ± uE±nn"
+        '* Input:       Analical result (r) and uncertainty (u) 
+        '* Returns:     Returns a string formatted as "r ± u" or "< r" if r < u
+        '* Author:      Backscatter enterprises
+        '* Date:        6/6/2025
+
+        Dim LT As String
+        Dim Rmag As Double
+        Dim Umag As Double
+        Dim Rman As Double
+        Dim Uman As Double
+        Dim LogV As Double
+        Dim LogSign As String
+        Dim RUText As String
+        Dim PrecisionStr As String
+        Dim x As Integer
+
+        'Set Precision format
+        If precision <= 0 Then
+            precision = 0
+            PrecisionStr = "0"
+        Else
+            PrecisionStr = "0."
+        End If
+        For x = 1 To precision
+            PrecisionStr += "0"
+        Next
+
+        'Change R and U to precision requested
+        r = CDbl(SigFig(r, precision + 1))
+        u = CDbl(SigFig(u, precision + 1))
+
+        'Determine less than status
+        LT = If(r <= u, "<", "")
+
+        'Determine magnitude of result
+        If r = 0 Then
+            Rmag = 0
+        Else
+            Rmag = Math.Abs(r)
+            Rmag = Math.Log(Rmag) / Math.Log(10.0#)
+            Rmag = Int(Rmag)
+            Rmag = 10 ^ Rmag
+        End If
+
+        'Determine magnitude of uncertainty
+        If u = 0 Then
+            Umag = 0
+        Else
+            Umag = Math.Abs(u)
+            Umag = Math.Log(Umag) / Math.Log(10.0#)
+            Umag = Int(Umag)
+            Umag = 10 ^ Umag
+        End If
+
+        'Determine result mantissa
+        Rman = r / Math.Max(Rmag, Umag)
+
+        'Determine uncertainty mantissa
+        Uman = u / Math.Max(Rmag, Umag)
+
+        'Determine if exponential is positive or negative
+        LogV = Math.Log(Math.Max(Rmag, Umag)) / Math.Log(10.0#)
+        LogSign = If(LogV >= 0, "+", "")
+
+        'Build it as a complete string
+        RUText = LT & " " & Rman.ToString(PrecisionStr) & "±" & Uman.ToString(PrecisionStr) & "E" & LogSign & (Math.Log(Math.Max(Rmag, Umag)) / Math.Log(10.0#)).ToString("00")
+
+        'Return Result
+        Return Trim(RUText)
     End Function
 
 End Module
