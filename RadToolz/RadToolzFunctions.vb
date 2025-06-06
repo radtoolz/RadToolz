@@ -1637,6 +1637,7 @@ HandleErrors:
         '* Returns:     Returns a string formatted as "r ± u" or "< r" if r < u
         '* Author:      Backscatter enterprises
         '* Date:        6/6/2025
+        '* Notes:       Originally needed by Misa Y.  Name suggestion Bill F.
 
         Dim LT As String
         Dim Rmag As Double
