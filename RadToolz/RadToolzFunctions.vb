@@ -15,7 +15,7 @@ Public Module MyFunctions
         num As Decimal,
         <ExcelArgument(Name:="(Optional) Number of Digits", Description:="is the number of digits you want to round to.  Negative round to the left of the decimal point. Zero to the nearest integer (default)")>
         Optional digits As Integer = 0) _
-        As ObjectI
+        As Object
         '* Usage:       Return a number to the desired precision
         '* Input:       num - the number to return to the desired precision
         '*              digits - the number of decimal places to represent
