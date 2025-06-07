@@ -15,7 +15,7 @@ Public Module MyFunctions
         num As Decimal,
         <ExcelArgument(Name:="(Optional) Number of Digits", Description:="is the number of digits you want to round to.  Negative round to the left of the decimal point. Zero to the nearest integer (default)")>
         Optional digits As Integer = 0) _
-        As Object
+        As ObjectI
         '* Usage:       Return a number to the desired precision
         '* Input:       num - the number to return to the desired precision
         '*              digits - the number of decimal places to represent
@@ -1037,8 +1037,7 @@ HandleErrors:
 #Enable Warning IDE0058 ' Expression value is never used
 
         RTZLicense = "RadToolz license may be found at " & license &
-            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt" &
-            "  DnsClient.NET license may be found at https://github.com/MichaCo/DnsClient.NET/blob/dev/LICENSE"
+            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt"
 
         Exit Function
 
@@ -1103,7 +1102,7 @@ HandleErrors:
         '* Input:       None
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
+        '* Date:        3/28/2025
 
         Dim Msg As String
         Dim ENSDF As String
@@ -1111,6 +1110,7 @@ HandleErrors:
         Dim GENII As String
         Dim ANSI8_1 As String
         Dim ANSI8_15 As String
+        Dim XCOM As String
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
@@ -1142,7 +1142,16 @@ HandleErrors:
         ANSI8_15 = "    ANSI, 2014b.  Nuclear Criticality Safety Control of " & vbCrLf &
                    "    Selected Actinide Nuclides.  ANSI/ANS-8.15-2014 (R2019)." & vbCrLf & vbCrLf
 
-        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15
+        XCOM = "Photon mass attenuation coefficients derived from:" & vbCrLf &
+                vbCrLf &
+                "    Berger, M.J., Hubbell, J.H., Seltzer, S.M., Chang, J., Coursey, J.S.," & vbCrLf &
+                "    Sukumar, R., Zucker, D.S., Olsen, K., 2010. XCOM: Photon Cross" & vbCrLf &
+                "    Sections Database. NIST Standard Reference Database 8, Version 1.5." & vbCrLf &
+                "    https://www.nist.gov/pml/xcom-photon-cross-sections-database " & vbCrLf &
+                "    as of 3/28/2025" & vbCrLf & vbCrLf
+
+        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15 & XCOM
+
         Dim msgBoxResult As Object = MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers())
 
         RTZRefs = "" & no_input
@@ -1174,7 +1183,7 @@ HandleErrors:
         On Error GoTo HandleErrors
 
         Dim Msg As Object
-        Dim vers As String = "RTZ version not found."
+        Dim vers As String = "RTZ version Not found."
         Dim versNum As Double
         Dim txt As String
         Dim result As Object
@@ -1196,20 +1205,20 @@ HandleErrors:
 
 #Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
-            Msg = ("RadToolz is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
 
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
+            vers = "Current RadToolz version Is " & vers & "."
         ElseIf versNum < RadToolzVersion Then ' Pre-release version
-            vers = ("RadToolz is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
+            vers = ("RadToolz Is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
         ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
-            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version and should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
             Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
             If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
-            vers = "Current RadToolz version is " & vers & "."
+            vers = "Current RadToolz version Is " & vers & "."
         Else ' Current release version
-            vers = "RadToolz is up to date." & no_input
+            vers = "RadToolz Is up to date." & no_input
         End If
 #Enable Warning IDE0058 ' Expression value is never used
 
@@ -1263,7 +1272,7 @@ HandleErrors:
 
     <ExcelFunction(Description:="Return Number to desired accuracy", Category:="RadToolz")>
     Public Function SigFig(
-        <ExcelArgument(Name:="Number", Description:="A number or expression of a number")>
+        <ExcelArgument(Name:="Number", Description:="A number Or expression of a number")>
         num As Double,
         <ExcelArgument(Name:="Significant Figures", Description:="Integer representing the desired number of significant figures")>
         sf As Integer) _
@@ -1286,11 +1295,11 @@ HandleErrors:
 
     End Function
 
-    <ExcelFunction(Description:="Specific activity (Ci/g) or (Bq/kg) for an isotope", Category:="RadToolz")>
+    <ExcelFunction(Description:="Specific activity (Ci/g) Or (Bq/kg) for an isotope", Category:="RadToolz")>
     Public Function SpA(
         <ExcelArgument(Name:="Isotope", Description:="Isotope of interest (e.g., U-238)")>
         Isotope As String,
-        <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0  = (Ci/g)  1 = (Bq/kg).")>
+        <ExcelArgument(Name:="(optional) SI", Description:="0 Or 1, default Is 0  = (Ci/g)  1 = (Bq/kg).")>
         Optional SI As Integer = 0) _
         As Object
         '* Usage:       Calculate Specific Activity for Isotope
@@ -1435,18 +1444,6 @@ HandleErrors:
 
     End Function 'XoQ
 
-    'SigFig
-
-    'RTZVers
-
-    'RTZRefs
-
-    'RTZLicense
-
-    'RTZListParams
-
-    'RTZAttribution
-
     Private Function TGSigma(Direction As String, PG As Integer, Distance As Double) As Double
 
         Dim ay(5) As Double
@@ -1537,6 +1534,175 @@ HandleErrors:
 
     End Function
 
-    'RTZUpdate
+    'Mass Attenuation
+    <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type And gamma energy.", Category:="RadToolz")>
+    Public Function MassAttenuation(
+        <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, Or Water")>
+        LongMaterial As String, ' Atomic number
+        <ExcelArgument(Name:="Energy", Description:="Energy of the gamma radiation in MeV between 0.05 - 2.0 MeV")>
+        Energy As Double ' Energy in MeV
+    ) As Object
+        '* Usage:       Calculates the mass attenuation coefficient
+        '* Input:       Type of shield, gamma energy
+        '* Returns:     Mass attenuation coefficient in cm^2/g
+        '* Author:      Backscatter enterprises
+        '* Date:        3/28/2025
+
+        Dim Material As String
+        Dim a0 As Double
+        Dim a1 As Double
+        Dim a2 As Double
+        Dim a3 As Double
+        Dim b1 As Double
+        Dim b2 As Double
+        Dim b3 As Double
+
+        'Sanitize energy input
+        If Energy < 0.05 Or Energy > 2.0# Then
+            Return "Error: Energy out of range. Must be between 0.05 and 2.0 MeV"
+            Exit Function
+        End If
+
+        'load coefficients
+        Material = UCase(Left(LongMaterial, 1))
+        Select Case Material
+            Case "I" 'iron
+                a0 = 0.00743295203
+                a1 = 0.09738991781
+                a2 = -0.04526362386
+                a3 = 0.00034872728
+                b1 = -0.76149637072
+                b2 = -1.00688588272
+                b3 = -2.87534113681
+
+            Case "L"
+
+                If Energy < 0.1 Then
+                    a0 = 42.15455105865
+                    a1 = -998.44722225718
+                    a2 = 6323.91543494432
+                    a3 = 0#
+                    b1 = 1.0#
+                    b2 = 2.0#
+                    b3 = 0#
+                Else
+                    a0 = 2.17776082501
+                    a1 = -1.10876399965
+                    a2 = -1.01125005597
+                    a3 = 0.01419822914
+                    b1 = 0.01114149885
+                    b2 = 0.01114170474
+                    b3 = -2.58336149644
+                End If
+
+            Case "W" 'water
+                a0 = -0.00074561909
+                a1 = -0.56195619194
+                a2 = 0.63188838754
+                a3 = 0.00142651792
+                b1 = -0.80773068662
+                b2 = -0.76896733486
+                b3 = -1.68199765411
+
+            Case "C" 'concrete/portland cement
+                a0 = -0.0086016241
+                a1 = 0.14926661004
+                a2 = -0.07659210367
+                a3 = 0.00003361636
+                b1 = -0.58833670263
+                b2 = -0.741715707
+                b3 = -2.91857691529
+
+            Case Else
+                Return "Error: Invalid material. Must be Iron, Lead, Concrete, or Water."
+                Exit Function
+
+        End Select
+
+        Return SigFig(a0 + (a1 * (Energy ^ b1)) + (a2 * (Energy ^ b2)) + (a3 * (Energy ^ b3)), 4)
+
+    End Function
+
+    <ExcelFunction(Description:="Format analytical result and uncertainty as R.RR±U.UUE±NN.", Category:="RadToolz", IsMacroType:=True)>
+    Public Function RUFormat(
+        <ExcelArgument(Name:="Result", Description:="Analytical result.  Result will be displayed as < if less than uncertainty.")>
+        r As Double, ' result
+        <ExcelArgument(Name:="Uncertainty", Description:="Uncertainty of analytical result")>
+        u As Double, ' uncertainty
+        <ExcelArgument(Name:="(optional) Precision", Description:="Number of places after the decimal point.")>
+        Optional precision As Integer = 2
+    ) As Object
+        '* Usage:       Formats a result with uncertainty in the form "r ± uE±nn"
+        '* Input:       Analical result (r) and uncertainty (u) 
+        '* Returns:     Returns a string formatted as "r ± u" or "< r" if r < u
+        '* Author:      Backscatter enterprises
+        '* Date:        6/6/2025
+        '* Notes:       Originally needed by Misa Y.  Name suggestion Bill F.
+
+        Dim LT As String
+        Dim Rmag As Double
+        Dim Umag As Double
+        Dim Rman As Double
+        Dim Uman As Double
+        Dim LogV As Double
+        Dim LogSign As String
+        Dim RUText As String
+        Dim PrecisionStr As String
+        Dim x As Integer
+
+        'Set Precision format
+        If precision <= 0 Then
+            precision = 0
+            PrecisionStr = "0"
+        Else
+            PrecisionStr = "0."
+        End If
+        For x = 1 To precision
+            PrecisionStr += "0"
+        Next
+
+        'Change R and U to precision requested
+        r = CDbl(SigFig(r, precision + 1))
+        u = CDbl(SigFig(u, precision + 1))
+
+        'Determine less than status
+        LT = If(r <= u, "<", "")
+
+        'Determine magnitude of result
+        If r = 0 Then
+            Rmag = 0
+        Else
+            Rmag = Math.Abs(r)
+            Rmag = Math.Log(Rmag) / Math.Log(10.0#)
+            Rmag = Int(Rmag)
+            Rmag = 10 ^ Rmag
+        End If
+
+        'Determine magnitude of uncertainty
+        If u = 0 Then
+            Umag = 0
+        Else
+            Umag = Math.Abs(u)
+            Umag = Math.Log(Umag) / Math.Log(10.0#)
+            Umag = Int(Umag)
+            Umag = 10 ^ Umag
+        End If
+
+        'Determine result mantissa
+        Rman = r / Math.Max(Rmag, Umag)
+
+        'Determine uncertainty mantissa
+        Uman = u / Math.Max(Rmag, Umag)
+
+        'Determine if exponential is positive or negative
+        LogV = Math.Log(Math.Max(Rmag, Umag)) / Math.Log(10.0#)
+        LogSign = If(LogV >= 0, "+", "")
+
+        'Build it as a complete string
+        RUText = LT & " " & Rman.ToString(PrecisionStr) & "±" & Uman.ToString(PrecisionStr) & "E" & LogSign & (Math.Log(Math.Max(Rmag, Umag)) / Math.Log(10.0#)).ToString("00")
+
+        'Return Result
+        Return Trim(RUText)
+    End Function
 
 End Module
