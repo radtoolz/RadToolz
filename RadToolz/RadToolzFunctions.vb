@@ -1536,7 +1536,7 @@ HandleErrors:
 
     'Mass Attenuation
     <ExcelFunction(Description:="Return the mass attenuation coefficient (cm2/g) based on the shield type And gamma energy.", Category:="RadToolz")>
-    Public Function MassAttenuation(
+    Private Function MassAttenuation(
         <ExcelArgument(Name:="Shield", Description:="Iron, Lead, Concrete, Or Water")>
         LongMaterial As String, ' Atomic number
         <ExcelArgument(Name:="Energy", Description:="Energy of the gamma radiation in MeV between 0.05 - 2.0 MeV")>
@@ -1547,6 +1547,7 @@ HandleErrors:
         '* Returns:     Mass attenuation coefficient in cm^2/g
         '* Author:      Backscatter enterprises
         '* Date:        3/28/2025
+        '* Notes:       Not tested for use outside beta community.
 
         Dim Material As String
         Dim a0 As Double
