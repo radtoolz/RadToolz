@@ -1,0 +1,99 @@
+name: Build, Package and Sign XLL v.23 
+
+# Limit the default token permissions
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_sign_and_package:
+    runs-on: windows-latest
+
+    # Require a protected environment (create "release-signing" under
+    # Settings > Environments and add required reviewers/teams)
+    environment: 'release-signing'
+
+    env: 
+      SIGNPATHDIR: ${{ github.workspace }}\Radtoolz\bin\Release
+      SIGNPATHFILES: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-*-packed.xll
+      XLLBINSPATH: ${{ github.workspace }}\Radtoolz\bin\Release\XLL-binaries.zip
+      XLL32: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn-packed.xll
+      XLL64: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-AddIn64-packed.xll
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Validate caller is allowed to run this workflow (optional)
+      # This step uses the secret ALLOWED_BUILD_USERS containing a comma-separated list of GitHub usernames.
+      # If empty or not set, the check is skipped (environment approval still applies).
+      uses: actions/github-script@v6
+      env:
+        ALLOWED_BUILD_USERS: ${{ secrets.ALLOWED_BUILD_USERS }}
+      with:
+        script: |
+          const allowed = (process.env.ALLOWED_BUILD_USERS || '').split(',').map(s => s.trim()).filter(Boolean);
+          const actor = process.env.GITHUB_ACTOR;
+          console.log('Workflow actor:', actor);
+          if (allowed.length > 0 && !allowed.includes(actor)) {
+            throw new Error(`Actor ${actor} is not allowed to run this workflow`);
+          }
+
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
+
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Restore dependencies
+      run: nuget restore
+
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
+
+    - name: List output directory contents
+      run: |
+        dir ${{ env.XLL32 }}
+        dir ${{ env.XLL64 }}
+
+      shell:  pwsh
+
+    - name: upload-unsigned-artifact-for-signing    
+      id: upload-unsigned-artifact
+      uses: actions/upload-artifact@v4
+      with: 
+        path: ${{ env.SIGNPATHFILES }}
+
+    - id: submit-signing-request
+      uses: signpath/github-action-submit-signing-request@v1.1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+        project-slug: 'RadToolz'
+        signing-policy-slug: 'release-signing'
+        github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+        artifact-configuration-slug: 'RTZ-XLL'
+        wait-for-completion: true
+        output-artifact-directory: 'RadToolz\bin\Release'
+
+    - name: List output directory XLL
+      run: dir ${{ env.SIGNPATHDIR }}\*pack*.xll
+      shell:  pwsh
+        
+    - name: Upload XLL binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: XLL-binaries
+        path: |
+            ${{ env.XLL32 }}
+            ${{ env.XLL64 }}
+
+    - name: List uploaded artifacts
+      run: |
+        echo "Uploaded artifacts:"
+        gh api -H "Accept: application/vnd.github.v3+json" /repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[].name'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
