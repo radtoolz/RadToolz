@@ -257,7 +257,7 @@ HandleErrors:
             End If
         End If
 
-        '*Assert:  lookging for INH
+        '*Assert:  looking for INH
         'Load the DCF's by ICRP
         Select Case DCFStd
             Case "68"
@@ -441,7 +441,7 @@ HandleErrors:
         <ExcelArgument(Name:="(optional) SI", Description:="0 or 1, default is 0  = Ci for activity, 1 = Bq.")>
         Optional SI As Integer = 0) _
         As Object
-        '* Usage:       Calcualte FGE
+        '* Usage:       Calculate FGE
         '* Input:       Radionuclide (e.g., Pu-241)
         '*              Activity of radionuclide
         '*              optional Basis, basis of equivalence
@@ -519,7 +519,7 @@ HandleErrors:
             Exit Function
         End If
 
-        'Santize Acitivty
+        'Sanitize Acitivty
         If Not IsNumeric(Activity) Then
             FGE = "Activity is not a number"
             Exit Function
@@ -708,7 +708,7 @@ HandleErrors:
         '*              TimeUnit - Seconds, Minutes, Hours, Days, or Years, default is seconds
         '* Returns:     Activity of TerminalMember after DecayTime, assuming 0 initial activity
         '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
+        '* Date:        12/24/2025
 
         'Variables
         Dim i As Double
@@ -749,6 +749,11 @@ HandleErrors:
 
         If Not pds.VerifyIsotope(TerminalMember) Then
             RadDecay = "Invalid Terminal Member"
+            GoTo ExitHere
+        End If
+
+        If StartingMember <> TerminalMember And DecayTime < 0 Then
+            RadDecay = "Unable to decay backwards in time for series"
             GoTo ExitHere
         End If
 
@@ -1001,7 +1006,7 @@ HandleErrors:
 
         RTZFunctions = "Functions for Radtoolz version " & RTZVers()
 
-        uRng = uRng 'dummy operation to calm the Excel denpendency tree down!
+        uRng = uRng 'dummy operation to calm the Excel dependency tree down!
 
         Exit Function
 
@@ -1081,7 +1086,7 @@ HandleErrors:
 
         RTZParams = If(Rsp, "Radtoolz version " & RTZVers(), "Failed")
 
-        uRng = uRng 'dummy operation to calm the Excel denpendency tree down!
+        uRng = uRng 'dummy operation to calm the Excel dependency tree down!
 
         Exit Function
 
@@ -1132,7 +1137,7 @@ HandleErrors:
                 "    DOE, 2004. GENII Computer Code, Application Guidance for" & vbCrLf &
                 "    Documented Safety Analysis,Final Report, U.S. Department of Energy." & vbCrLf &
                 "    https://energy.gov/ehss/downloads/" & vbCrLf &
-                "    guidance-genii-computer-code-july-6-2004" & vbCrLf & vbCrLf
+                "    guidance-genii-computer-code-July-6-2004" & vbCrLf & vbCrLf
 
         ANSI8_1 = "Fissile critical mass values are from:" & vbCrLf &
                 vbCrLf &
@@ -1605,7 +1610,7 @@ HandleErrors:
                 b2 = -0.76896733486
                 b3 = -1.68199765411
 
-            Case "C" 'concrete/portland cement
+            Case "C" 'concrete/Portland cement
                 a0 = -0.0086016241
                 a1 = 0.14926661004
                 a2 = -0.07659210367
@@ -1634,7 +1639,7 @@ HandleErrors:
         Optional precision As Integer = 2
     ) As Object
         '* Usage:       Formats a result with uncertainty in the form "r ± uE±nn"
-        '* Input:       Analical result (r) and uncertainty (u) 
+        '* Input:       Analytical result (r) and uncertainty (u)
         '* Returns:     Returns a string formatted as "r ± u" or "< r" if r < u
         '* Author:      Backscatter enterprises
         '* Date:        6/6/2025
