@@ -1,0 +1,147 @@
+name: Build, Sign and Release XLL v.2
+
+# Limit the default token permissions
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v4.02'
+
+jobs:
+  build_sign_and_release:
+    runs-on: windows-latest
+    
+    # Require a protected environment (create "release-signing" under
+    # Settings > Environments and add required reviewers/teams)
+    environment: 'release-signing'
+
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    env:
+      ODIR: ${{ github.workspace }}\RadToolz\bin\Release
+      XLL32: ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn-packed.xll
+      XLL64: ${{ github.workspace }}\RadToolz\bin\Release\RadToolz-AddIn64-packed.xll
+      SIGNPATHFILES: ${{ github.workspace }}\Radtoolz\bin\Release\RadToolz-*-packed.xll
+      
+    steps:
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+
+    - name: Validate caller is allowed to run this workflow (optional)
+      # This step uses the secret ALLOWED_BUILD_USERS containing a comma-separated list of GitHub usernames.
+      # If empty or not set, the check is skipped (environment approval still applies).
+      uses: actions/github-script@v6
+      env:
+        ALLOWED_BUILD_USERS: ${{ secrets.ALLOWED_BUILD_USERS }}
+      with:
+        script: |
+          const allowed = (process.env.ALLOWED_BUILD_USERS || '').split(',').map(s => s.trim()).filter(Boolean);
+          const actor = process.env.GITHUB_ACTOR;
+          console.log('Workflow actor:', actor);
+          if (allowed.length > 0 && !allowed.includes(actor)) {
+            throw new Error(`Actor ${actor} is not allowed to run this workflow`);
+          }
+
+    # Set up .NET Framework 4.8.1
+    - name: Set up .NET Framework 4.8.1
+      run: |
+        choco install netfx-4.8.1-devpack -y
+      shell: pwsh
+
+    # Set up MSBuild
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # Restore dependencies
+    - name: Restore dependencies
+      run: nuget restore
+      shell: pwsh
+
+    # Build the project
+    - name: Build project
+      run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false
+      shell: pwsh
+
+    # Debug - List files in the output directory
+    - name: Debug - List files
+      run: dir ${{ env.ODIR }}
+      shell: pwsh
+
+    # Upload an artifact to SignPath.io
+    - name: Upload unsigned artifact
+      id: upload-unsigned-artifact
+      uses: actions/upload-artifact@v4
+      with: 
+        path: ${{ env.SIGNPATHFILES }}
+    
+    # Submit a sign request for the XLLs and overwrite them in Release
+    - id: submit-signing-request
+      uses: signpath/github-action-submit-signing-request@v1.1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+        project-slug: 'RadToolz'
+        signing-policy-slug: 'release-signing'
+        github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+        artifact-configuration-slug: 'RTZ-XLL'
+        wait-for-completion: true
+        output-artifact-directory: 'RadToolz\bin\Release'
+
+    # Generate artifact attestation (32-bit)
+    - name: Generate artifact attestation (32-bit)
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: ${{ env.XLL32 }}
+
+    # Generate artifact attestation (64-bit)
+    - name: Generate artifact attestation (64-bit)
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: ${{ env.XLL64 }}
+
+    # Calculate SHA-256 hashes
+    - name: Calculate SHA-256 hashes
+      id: calculate_hashes
+      run: |
+        $hash1 = Get-FileHash $env:XLL32 -Algorithm SHA256
+        $hash2 = Get-FileHash $env:XLL64 -Algorithm SHA256
+        "SHA256 Hashes" > sha256.txt
+        "RadToolz-AddIn-packed.xll:  $($hash1.Hash)" >> sha256.txt
+        "RadToolz-AddIn64-packed.xll:  $($hash2.Hash)" >> sha256.txt
+        Get-Content sha256.txt
+      shell: pwsh
+
+    # Install GitHub CLI
+    - name: Install GitHub CLI
+      run: |
+        choco install gh -y
+      shell: pwsh
+
+    # Authenticate GitHub CLI
+    - name: Authenticate GitHub CLI
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+      shell: pwsh
+
+    # Create a new release
+    - name: Create release
+      id: create_release
+      run: |
+        $hashes = Get-Content sha256.txt -Raw
+        gh release create ${{ github.event.inputs.version }} $env:XLL32 $env:XLL64 --title "${{ github.event.inputs.version }}" --notes "$hashes"
+      shell: pwsh
+
+    # List release assets
+    - name: List release assets
+      run: |
+        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+      shell: pwsh
