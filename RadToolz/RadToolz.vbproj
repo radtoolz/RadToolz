@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.props" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.props')" />
+  <Import Project="..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.props" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -51,17 +51,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ExcelDna.Integration, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.Integration.1.9.0-beta2\lib\net462\ExcelDna.Integration.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.Integration.1.9.0\lib\net462\ExcelDna.Integration.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDna.IntelliSense, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDna.IntelliSense.1.9.0-beta2\lib\net462\ExcelDna.IntelliSense.dll</HintPath>
+      <HintPath>..\packages\ExcelDna.IntelliSense.1.9.0\lib\net462\ExcelDna.IntelliSense.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Office.interop.access.dao, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <HintPath>..\packages\ExcelDna.Interop.Dao.15.0.1\lib\net452\Microsoft.Office.interop.access.dao.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Office.Interop.Excel.15.0.4795.1001\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=16.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Office.Interop.Excel.16.0.18925.20022\lib\net40\Microsoft.Office.Interop.Excel.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.Vbe.Interop, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
@@ -168,12 +168,12 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets'))" />
     <Error Condition="!Exists('..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets'))" />
-    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.props'))" />
-    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.targets'))" />
+    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.props'))" />
+    <Error Condition="!Exists('..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.targets'))" />
   </Target>
   <Import Project="..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets" Condition="Exists('..\packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" />
   <Import Project="..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets" Condition="Exists('..\packages\ExcelDna.Interop.Dao.15.0.1\build\ExcelDna.Interop.Dao.targets')" />
-  <Import Project="..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.targets" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0-beta2\build\ExcelDna.AddIn.targets')" />
+  <Import Project="..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.targets" Condition="Exists('..\packages\ExcelDna.AddIn.1.9.0\build\ExcelDna.AddIn.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
