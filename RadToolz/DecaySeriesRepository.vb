@@ -107,7 +107,6 @@ Public Module DecaySeriesRepository
                     Return items
                 End Using
             End Using
-
         Catch ex As Exception
             Msg = "RadToolz could not load its isotope database (DecaySeriesData.json)." & Chr(13) &
                   "Error: " & ex.Message
