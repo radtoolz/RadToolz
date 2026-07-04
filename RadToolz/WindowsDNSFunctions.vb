@@ -1,4 +1,5 @@
 Imports System.Runtime.InteropServices
+
 'Not an Excel visible module
 Public Module DnsFunctions
 
