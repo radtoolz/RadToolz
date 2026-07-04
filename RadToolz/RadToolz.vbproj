@@ -144,6 +144,7 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="DecaySeriesData.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
