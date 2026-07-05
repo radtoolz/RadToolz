@@ -34,6 +34,15 @@ Public Module DecaySeriesRepository
     ' share its result.
     Private ReadOnly _cache As New Lazy(Of List(Of DecaySeriesItem))(AddressOf LoadFromEmbeddedResource)
 
+    ' Isotope symbol -> ascending list of positions in _cache.Value where that
+    ' symbol occurs (more than one position = a decay-chain branch point).
+    ' Built once, in the same forward-pass order as the embedded JSON, so the
+    ' per-symbol lists are already in the sequential order GetDecayChain's
+    ' branch logic depends on.
+    Private ReadOnly _index As New Lazy(Of Dictionary(Of String, List(Of Integer)))(AddressOf BuildIndex)
+
+    Private ReadOnly _emptyIndices As New List(Of Integer)
+
     ''' <summary>
     ''' Returns the full decay-series database as a Collection of
     ''' DecaySeriesItem, in the same order as the original hardcoded
@@ -57,6 +66,30 @@ Public Module DecaySeriesRepository
     End Function
 
     ''' <summary>
+    ''' Returns the full decay-series database as a strongly-typed,
+    ''' read-only list, in the same order as GetAll()/the embedded JSON -
+    ''' with no per-call copy. Use this instead of GetAll() for internal
+    ''' code that scans the whole table (e.g. GetDecayChain, ListAll),
+    ''' since it avoids both the O(n) Collection.Add copy and the late
+    ''' binding that comes from Collection.Item(x) being late-bound Object.
+    ''' </summary>
+    Public Function GetAllList() As IReadOnlyList(Of DecaySeriesItem)
+        Return _cache.Value
+    End Function
+
+    ''' <summary>
+    ''' Positions (0-based, into GetAllList()) where the given isotope
+    ''' symbol occurs, in ascending/original-table order. Empty if the
+    ''' isotope is not in the database. O(1) lookup instead of an O(n)
+    ''' scan over the full table.
+    ''' </summary>
+    Public Function IndicesOf(isotope As String) As IReadOnlyList(Of Integer)
+        Dim positions As List(Of Integer) = Nothing
+
+        Return If(_index.Value.TryGetValue(isotope, positions), positions, _emptyIndices)
+    End Function
+
+    ''' <summary>
     ''' Number of isotope records currently loaded. Exposed mainly for
     ''' diagnostics/sanity checks (e.g. from RTZUpdate or a test).
     ''' </summary>
@@ -65,6 +98,30 @@ Public Module DecaySeriesRepository
             Return _cache.Value.Count
         End Get
     End Property
+
+    Private Function BuildIndex() As Dictionary(Of String, List(Of Integer))
+        '* Usage:       Builds the isotope-symbol -> position(s) index used
+        '*              by IndicesOf(), once, from the already-cached data.
+        '* Author:      Backscatter enterprises
+        '* Date:        7/5/2026
+
+        Dim map As New Dictionary(Of String, List(Of Integer))(StringComparer.OrdinalIgnoreCase)
+        Dim items As List(Of DecaySeriesItem) = _cache.Value
+
+        For i As Integer = 0 To items.Count - 1
+            Dim isotope As String = items(i).Isotope
+            Dim positions As List(Of Integer) = Nothing
+
+            If Not map.TryGetValue(isotope, positions) Then
+                positions = New List(Of Integer)
+                map(isotope) = positions
+            End If
+
+            positions.Add(i)
+        Next
+
+        Return map
+    End Function
 
     Private Function LoadFromEmbeddedResource() As List(Of DecaySeriesItem)
         '* Usage:       Reads and deserializes DecaySeriesData.json from
