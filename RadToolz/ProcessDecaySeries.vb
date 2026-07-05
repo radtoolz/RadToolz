@@ -38,13 +38,14 @@ HandleErrors:
 
 #Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function GetDecayChain(
     sParent As String, ByVal sTerminal As String,
     ByRef gdcdci() As Collection,
     Optional Instance As Integer = 1,
     Optional currBranch As Integer = 1,
     Optional nextBranch As Integer = 1,
-    Optional ByRef pds As Collection = Nothing,
+    Optional ByRef pds As IReadOnlyList(Of DecaySeriesItem) = Nothing,
     Optional OptionalSortOrder As Integer = 1) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Gets decay chain from sParent to sTerminal including all branches
@@ -70,19 +71,31 @@ HandleErrors:
         sTerminal = UCase(sTerminal)
 
         If pds Is Nothing Then 'only load pds once per parent, then refer for each daughter in each branch
-            pds = New Collection
-            pds = GetDecaySeries()
+            pds = DecaySeriesRepository.GetAllList()
         End If
 
         'All Isotopes
         If sParent = "ALL" Then
-            gdcdci(0) = pds
+            gdcdci(0) = DecaySeriesRepository.GetAll()
             GoTo ExitHere
         End If
 
-        For x = 1 To pds.Count
-            If sParent = DirectCast(pds.Item(x).Isotope, String) Then 'sParent found
-                If (DirectCast(pds.Item(x).BranchingRatio, Double) <> 1.0#) And (sParent <> sTerminal) Then 'hit a branch point
+        ' O(1) lookup of every position where sParent occurs, in ascending
+        ' table order, instead of an O(n) scan over the full ~5,500-item
+        ' table. The full ENSDF table (unlike the old 182-isotope table)
+        ' has isotopes with more than two recorded decay modes - e.g.
+        ' Bi-214 has three (to Po-214, Tl-210, and a direct branch to
+        ' Pb-210) - so every occurrence beyond the first is a distinct
+        ' alternate branch, not just the second.
+        Dim parentIndices As IReadOnlyList(Of Integer) = DecaySeriesRepository.IndicesOf(sParent)
+
+        If parentIndices.Count > 0 Then
+            x = parentIndices(0) + 1 '1-based, to match the pds.Item(x)-style access below
+
+            If (pds(x - 1).BranchingRatio <> 1.0#) And (sParent <> sTerminal) Then 'hit a branch point
+                'Fork one branch per additional occurrence of sParent (parentIndices(1), (2), ...)
+                Dim altIndex As Integer
+                For altIndex = 1 To parentIndices.Count - 1
                     'find empty branch = nextBranch
                     For y = currBranch + 1 To maxBranches
                         If (gdcdci(y).Count = 0) And (y <> currBranch) Then
@@ -99,34 +112,28 @@ HandleErrors:
 
                     Next y
 
-                    'Find next instance of sParent
-                    For y = x + 1 To pds.Count
-                        If sParent = DirectCast(pds.Item(y).Isotope, String) Then 'found next instance
-                            'Copy next instance of sParent to nextBranch
-                            bRsp = AddDecayChainItem(pds.Item(y), gdcdci(nextBranch))
-                            If Not bRsp Then
-                                GoTo HandleErrors
-                            End If
-                            y = pds.Count 'abort loop
-                        End If
-                    Next y
+                    'Add this alternate occurrence of sParent to nextBranch
+                    bRsp = AddDecayChainItem(pds(parentIndices(altIndex)), gdcdci(nextBranch))
+                    If Not bRsp Then
+                        GoTo HandleErrors
+                    End If
+
                     'Follow daughter down nextBranch
-                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch)
+                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds)
                     If Not bRsp Then GoTo HandleErrors
-                End If
-
-                'Load database info into collection for first parent
-                bRsp = AddDecayChainItem(pds.Item(x), gdcdci(currBranch))
-                If Not bRsp Then GoTo HandleErrors
-
-                'Continue with first daughter
-                If sParent <> sTerminal Then
-                    bRsp = GetDecayChain(DirectCast(pds.Item(x).Daughter, String), sTerminal, gdcdci, Instance + 1, currBranch)
-                    If Not bRsp Then GoTo HandleErrors
-                End If
-                x = pds.Count 'abort loop
+                Next altIndex
             End If
-        Next x
+
+            'Load database info into collection for first parent
+            bRsp = AddDecayChainItem(pds(x - 1), gdcdci(currBranch))
+            If Not bRsp Then GoTo HandleErrors
+
+            'Continue with first daughter
+            If sParent <> sTerminal Then
+                bRsp = GetDecayChain(pds(x - 1).Daughter, sTerminal, gdcdci, Instance + 1, currBranch, pds:=pds)
+                If Not bRsp Then GoTo HandleErrors
+            End If
+        End If
 
         'AbortBranchSearch:
 
@@ -252,6 +259,7 @@ HandleErrors:
 
 #Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function ListAll(<ExcelArgument(AllowReference:=True)> ByVal uRngVal As String) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Lists entire database starting at uRng
@@ -262,7 +270,7 @@ HandleErrors:
 
         On Error GoTo HandleErrors
 
-        Dim pds As Collection
+        Dim pds As IReadOnlyList(Of DecaySeriesItem)
         Dim x As Double
         Dim r As Double
         Dim c As Double
@@ -305,27 +313,27 @@ HandleErrors:
         iSheet.Cells(r, c + 16) = "BR"
         r += 1 'increment to the next row
 
-        pds = New Collection
-        pds = GetDecaySeries()
+        pds = DecaySeriesRepository.GetAllList()
 
         For x = 1 To pds.Count
-            iSheet.Cells(r + x - 1, c) = pds.Item(x).Isotope
-            iSheet.Cells(r + x - 1, c + 1) = pds.Item(x).Lambda
-            iSheet.Cells(r + x - 1, c + 2) = pds.Item(x).DCF68inhF1
-            iSheet.Cells(r + x - 1, c + 3) = pds.Item(x).DCF68inhF5
-            iSheet.Cells(r + x - 1, c + 4) = pds.Item(x).DCF68inhM1
-            iSheet.Cells(r + x - 1, c + 5) = pds.Item(x).DCF68inhM5
-            iSheet.Cells(r + x - 1, c + 6) = pds.Item(x).DCF68inhS1
-            iSheet.Cells(r + x - 1, c + 7) = pds.Item(x).DCF68inhS5
-            iSheet.Cells(r + x - 1, c + 8) = pds.Item(x).DCF68ing
-            iSheet.Cells(r + x - 1, c + 9) = pds.Item(x).DCF72inhF1
-            iSheet.Cells(r + x - 1, c + 10) = pds.Item(x).DCF72inhM1
-            iSheet.Cells(r + x - 1, c + 11) = pds.Item(x).DCF72inhS1
-            iSheet.Cells(r + x - 1, c + 12) = pds.Item(x).DCF72ing
-            iSheet.Cells(r + x - 1, c + 13) = pds.Item(x).A1
-            iSheet.Cells(r + x - 1, c + 14) = pds.Item(x).A2
-            iSheet.Cells(r + x - 1, c + 15) = pds.Item(x).Daughter
-            iSheet.Cells(r + x - 1, c + 16) = pds.Item(x).BranchingRatio
+            Dim item As DecaySeriesItem = pds(CInt(x) - 1)
+            iSheet.Cells(r + x - 1, c) = item.Isotope
+            iSheet.Cells(r + x - 1, c + 1) = item.Lambda
+            iSheet.Cells(r + x - 1, c + 2) = item.DCF68inhF1
+            iSheet.Cells(r + x - 1, c + 3) = item.DCF68inhF5
+            iSheet.Cells(r + x - 1, c + 4) = item.DCF68inhM1
+            iSheet.Cells(r + x - 1, c + 5) = item.DCF68inhM5
+            iSheet.Cells(r + x - 1, c + 6) = item.DCF68inhS1
+            iSheet.Cells(r + x - 1, c + 7) = item.DCF68inhS5
+            iSheet.Cells(r + x - 1, c + 8) = item.DCF68ing
+            iSheet.Cells(r + x - 1, c + 9) = item.DCF72inhF1
+            iSheet.Cells(r + x - 1, c + 10) = item.DCF72inhM1
+            iSheet.Cells(r + x - 1, c + 11) = item.DCF72inhS1
+            iSheet.Cells(r + x - 1, c + 12) = item.DCF72ing
+            iSheet.Cells(r + x - 1, c + 13) = item.A1
+            iSheet.Cells(r + x - 1, c + 14) = item.A2
+            iSheet.Cells(r + x - 1, c + 15) = item.Daughter
+            iSheet.Cells(r + x - 1, c + 16) = item.BranchingRatio
         Next x
 
         ListAll = True
@@ -399,40 +407,18 @@ HandleErrors:
 
     'ClearBranches
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function VerifyIsotope(uIsotope As String) As Boolean
         '* Usage:       Verifies isotope is in Class
         '* Input:       uIsotope (e.g., CS-137)
         '* Returns:     True if successful, else False
         '* Author:      Backscatter enterprises
         '* Date:        7/31/2015
+        '* Updated:     7/5/2026 - O(1) index lookup instead of an O(n)
+        '*              scan over the full isotope table (see
+        '*              DecaySeriesRepository.IndicesOf).
 
-        On Error GoTo HandleErrors
-
-        Dim pds As Collection
-        Dim x As Double
-        Dim r As Double
-        Dim c As Double
-        Dim Msg As String
-        Dim uRng As Object
-
-        pds = New Collection
-        pds = GetDecaySeries()
-
-        VerifyIsotope = False
-
-        For x = 1 To pds.Count
-            If DirectCast(pds.Item(x).Isotope, String) = uIsotope Then
-                VerifyIsotope = True
-                x = pds.Count 'ends loop
-            End If
-        Next
-
-HandleErrors:
-        If Err.Number <> 0 Then
-            Msg = "Error # " & Str(Err.Number) & " was generated by " _
-             & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
-            Dim msgBoxResult As Object = MsgBox(Msg, , "Error")
-        End If
+        VerifyIsotope = DecaySeriesRepository.IndicesOf(uIsotope).Count > 0
 
     End Function
 
