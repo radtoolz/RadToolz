@@ -172,13 +172,25 @@ HandleErrors:
         Next x
 
         'Populate array element zero with key to create unique isotope enumeration
+        '* Updated:     7/6/2026 - a Collection.Add with a duplicate key throws,
+        '*              and the same isotope legitimately repeats across branches
+        '*              (e.g. Bi-214 forks three ways), so this used to rely on
+        '*              letting that exception fail silently to drop repeats.
+        '*              For a heavily-forked chain (e.g. U-238, ~70 branches) that
+        '*              is hundreds of thrown-and-caught exceptions per call - the
+        '*              dominant cost of GetDecayChain for any branching chain.
+        '*              A HashSet membership check gives the same first-occurrence-
+        '*              wins result with no exceptions on the normal path.
+        Dim seenIsotopes As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         For x = 1 To maxBranches
             'If Not gdcdci(x) Is Nothing Then
             If gdcdci(x) IsNot Nothing Then
                 For y = 1 To gdcdci(x).Count
-                    On Error Resume Next
-                    gdcdci(0).Add(gdcdci(x).Item(y), DirectCast(gdcdci(x).Item(y).Isotope, String))
-                    On Error GoTo 0
+                    Dim candidate As Object = gdcdci(x).Item(y)
+                    Dim candidateIsotope As String = DirectCast(candidate.Isotope, String)
+                    If seenIsotopes.Add(candidateIsotope) Then
+                        gdcdci(0).Add(candidate, candidateIsotope)
+                    End If
                 Next y
             End If
         Next x
