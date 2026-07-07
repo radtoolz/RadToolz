@@ -5,7 +5,7 @@ Friend Module Constants
     '* Date:        1/25/2025
 
     Public Const RadToolzVersion As Double = 5.0
-    Public Const RadToolzPreRelease As String = "α" 'α ß Γ π Σ σ µ
+    Public Const RadToolzPreRelease As String = "ß" 'α ß Γ π Σ σ µ
     ' Must exceed the largest number of distinct decay-chain branches
     ' any single starting isotope's full tree can fork into. The full
     ' ENSDF-sourced table (unlike the old 182-isotope table) records
