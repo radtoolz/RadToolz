@@ -10,7 +10,7 @@ on:
       version:
         description: 'Release version'
         required: true
-        default: 'v4.02'
+        default: 'v5.00'
 
 jobs:
   build_sign_and_release:
