@@ -46,7 +46,8 @@ HandleErrors:
     Optional currBranch As Integer = 1,
     Optional nextBranch As Integer = 1,
     Optional ByRef pds As IReadOnlyList(Of DecaySeriesItem) = Nothing,
-    Optional OptionalSortOrder As Integer = 1) As Boolean
+    Optional OptionalSortOrder As Integer = 1,
+    Optional ByRef reachCache As Dictionary(Of String, Boolean) = Nothing) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Gets decay chain from sParent to sTerminal including all branches
         '* Input:       sParent = starting member isotope
@@ -74,6 +75,10 @@ HandleErrors:
             pds = DecaySeriesRepository.GetAllList()
         End If
 
+        If reachCache Is Nothing Then 'scoped to this top-level call only - sTerminal is fixed for the whole call tree (DDR-0002)
+            reachCache = New Dictionary(Of String, Boolean)(StringComparer.OrdinalIgnoreCase)
+        End If
+
         'All Isotopes
         If sParent = "ALL" Then
             gdcdci(0) = DecaySeriesRepository.GetAll()
@@ -96,6 +101,13 @@ HandleErrors:
                 'Fork one branch per additional occurrence of sParent (parentIndices(1), (2), ...)
                 Dim altIndex As Integer
                 For altIndex = 1 To parentIndices.Count - 1
+                    'Skip this occurrence entirely if its subtree can never reach sTerminal -
+                    'avoids the prefix copy and the recursion beneath it for a branch that
+                    'VerifyDecayChain would only prune away afterward anyway (DDR-0002).
+                    If Not CanReachTerminal(pds(parentIndices(altIndex)).Daughter, sTerminal, pds, reachCache) Then
+                        Continue For
+                    End If
+
                     'find empty branch = nextBranch
                     For y = currBranch + 1 To maxBranches
                         If (gdcdci(y).Count = 0) And (y <> currBranch) Then
@@ -119,7 +131,7 @@ HandleErrors:
                     End If
 
                     'Follow daughter down nextBranch
-                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds)
+                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds, reachCache:=reachCache)
                     If Not bRsp Then GoTo HandleErrors
                 Next altIndex
             End If
@@ -128,10 +140,12 @@ HandleErrors:
             bRsp = AddDecayChainItem(pds(x - 1), gdcdci(currBranch))
             If Not bRsp Then GoTo HandleErrors
 
-            'Continue with first daughter
+            'Continue with first daughter - same prune-before-recurse guard as the fork loop above (DDR-0002)
             If sParent <> sTerminal Then
-                bRsp = GetDecayChain(pds(x - 1).Daughter, sTerminal, gdcdci, Instance + 1, currBranch, pds:=pds)
-                If Not bRsp Then GoTo HandleErrors
+                If CanReachTerminal(pds(x - 1).Daughter, sTerminal, pds, reachCache) Then
+                    bRsp = GetDecayChain(pds(x - 1).Daughter, sTerminal, gdcdci, Instance + 1, currBranch, pds:=pds, reachCache:=reachCache)
+                    If Not bRsp Then GoTo HandleErrors
+                End If
             End If
         End If
 
@@ -467,6 +481,69 @@ HandleErrors:
         AddDecayChainItem = False
 
     End Function
+
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
+    Private Shared Function CanReachTerminal(isotope As String, sTerminal As String, pds As IReadOnlyList(Of DecaySeriesItem), cache As Dictionary(Of String, Boolean), Optional visiting As HashSet(Of String) = Nothing) As Boolean
+        '* Usage:       Memoized, isotope-name-only reachability check used to
+        '*              prune a GetDecayChain branch before it is built instead
+        '*              of after. No DecaySeriesItem copies, no Collection use -
+        '*              just isotope symbol comparisons over the shared table.
+        '* Input:       isotope = isotope symbol to test reachability from
+        '*              sTerminal = target isotope symbol, or "END" (always
+        '*                          reachable, matching VerifyDecayChain's own
+        '*                          "sTerminal = END" rule)
+        '*              pds = full isotope table
+        '*              cache = memoization map, scoped to one top-level
+        '*                      GetDecayChain call (sTerminal is fixed for
+        '*                      that whole call tree)
+        '*              visiting = cycle guard; decay chains are acyclic
+        '*                          today, but nothing upstream enforces
+        '*                          that as an invariant
+        '* Returns:     True if any path from isotope can reach sTerminal
+        '* Author:      DDR-0002
+        '* Date:        7/7/2026
+
+        If sTerminal = "END" Then
+            Return True
+        End If
+
+        If isotope = sTerminal Then
+            Return True
+        End If
+
+        Dim cached As Boolean = False
+        If cache.TryGetValue(isotope, cached) Then
+            Return cached
+        End If
+
+        If visiting Is Nothing Then
+            visiting = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        End If
+
+        If visiting.Contains(isotope) Then
+            Return False 'cycle guard: treat as not provably reachable via this path
+        End If
+#Disable Warning IDE0058 ' Expression value is never used
+        visiting.Add(isotope)
+#Enable Warning IDE0058 ' Expression value is never used
+
+        Dim result As Boolean = False
+        Dim occurrences As IReadOnlyList(Of Integer) = DecaySeriesRepository.IndicesOf(isotope)
+        For Each occurrenceIndex As Integer In occurrences
+            If CanReachTerminal(pds(occurrenceIndex).Daughter, sTerminal, pds, cache, visiting) Then
+                result = True
+                Exit For
+            End If
+        Next occurrenceIndex
+
+#Disable Warning IDE0058 ' Expression value is never used
+        visiting.Remove(isotope)
+#Enable Warning IDE0058 ' Expression value is never used
+        cache(isotope) = result
+
+        Return result
+
+    End Function 'CanReachTerminal
 
     Private Shared Function BubbleSortCollection(ByRef gdcdci As Collection, OptionalSortOrder As Integer) As Boolean
         '* Usage:       Sorts gdcdci by .Isotopoe descending mass, then alphabetic symbol
