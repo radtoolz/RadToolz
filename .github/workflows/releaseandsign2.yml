@@ -33,13 +33,13 @@ jobs:
     steps:
     # Checkout the repository
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
 
     - name: Validate caller is allowed to run this workflow (optional)
       # This step uses the secret ALLOWED_BUILD_USERS containing a comma-separated list of GitHub usernames.
       # If empty or not set, the check is skipped (environment approval still applies).
-      uses: actions/github-script@v6
+      uses: actions/github-script@v9
       env:
         ALLOWED_BUILD_USERS: ${{ secrets.ALLOWED_BUILD_USERS }}
       with:
@@ -59,7 +59,7 @@ jobs:
 
     # Set up MSBuild
     - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v3
 
     # Restore dependencies
     - name: Restore dependencies
@@ -79,14 +79,15 @@ jobs:
     # Upload an artifact to SignPath.io
     - name: Upload unsigned artifact
       id: upload-unsigned-artifact
-      uses: actions/upload-artifact@v4
-      with: 
+      uses: actions/upload-artifact@v7
+      with:
         path: ${{ env.SIGNPATHFILES }}
-    
+
     # Submit a sign request for the XLLs and overwrite them in Release
     - id: submit-signing-request
-      uses: signpath/github-action-submit-signing-request@v1.1
+      uses: signpath/github-action-submit-signing-request@v2
       with:
+        connector-url: 'https://githubactions.connectors.signpath.io'
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
         organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
         project-slug: 'RadToolz'
@@ -98,13 +99,13 @@ jobs:
 
     # Generate artifact attestation (32-bit)
     - name: Generate artifact attestation (32-bit)
-      uses: actions/attest-build-provenance@v2
+      uses: actions/attest-build-provenance@v4
       with:
         subject-path: ${{ env.XLL32 }}
 
     # Generate artifact attestation (64-bit)
     - name: Generate artifact attestation (64-bit)
-      uses: actions/attest-build-provenance@v2
+      uses: actions/attest-build-provenance@v4
       with:
         subject-path: ${{ env.XLL64 }}
 
@@ -126,22 +127,22 @@ jobs:
         choco install gh -y
       shell: pwsh
 
-    # Authenticate GitHub CLI
-    - name: Authenticate GitHub CLI
-      run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-      shell: pwsh
-
     # Create a new release
     - name: Create release
       id: create_release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ github.event.inputs.version }}
       run: |
         $hashes = Get-Content sha256.txt -Raw
-        gh release create ${{ github.event.inputs.version }} $env:XLL32 $env:XLL64 --title "${{ github.event.inputs.version }}" --notes "$hashes"
+        gh release create $env:VERSION $env:XLL32 $env:XLL64 --title $env:VERSION --notes "$hashes"
       shell: pwsh
 
     # List release assets
     - name: List release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ github.event.inputs.version }}
       run: |
-        gh release view ${{ github.event.inputs.version }} --json assets --jq '.assets[].name'
+        gh release view $env:VERSION --json assets --jq '.assets[].name'
       shell: pwsh

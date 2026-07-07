@@ -3,6 +3,7 @@ name: Build, Package and Sign XLL v.3
 # Limit the default token permissions
 permissions:
   contents: read
+  actions: read
 
 on:
   workflow_dispatch:
@@ -24,12 +25,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Validate caller is allowed to run this workflow (optional)
       # This step uses the secret ALLOWED_BUILD_USERS containing a comma-separated list of GitHub usernames.
       # If empty or not set, the check is skipped (environment approval still applies).
-      uses: actions/github-script@v6
+      uses: actions/github-script@v9
       env:
         ALLOWED_BUILD_USERS: ${{ secrets.ALLOWED_BUILD_USERS }}
       with:
@@ -46,7 +47,7 @@ jobs:
         choco install netfx-4.8.1-devpack -y
 
     - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v3
 
     - name: Restore dependencies
       run: nuget restore
@@ -61,15 +62,16 @@ jobs:
 
       shell:  pwsh
 
-    - name: upload-unsigned-artifact-for-signing    
+    - name: upload-unsigned-artifact-for-signing
       id: upload-unsigned-artifact
-      uses: actions/upload-artifact@v4
-      with: 
+      uses: actions/upload-artifact@v7
+      with:
         path: ${{ env.SIGNPATHFILES }}
 
     - id: submit-signing-request
-      uses: signpath/github-action-submit-signing-request@v1.1
+      uses: signpath/github-action-submit-signing-request@v2
       with:
+        connector-url: 'https://githubactions.connectors.signpath.io'
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
         organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
         project-slug: 'RadToolz'
@@ -84,7 +86,7 @@ jobs:
       shell:  pwsh
         
     - name: Upload XLL binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: XLL-binaries
         path: |
