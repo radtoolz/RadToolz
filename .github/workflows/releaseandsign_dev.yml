@@ -1,4 +1,4 @@
-name: Build, Sign XLL dev Branch
+name: Build, Sign, and Release XLL
 
 # Limit the default token permissions
 permissions:
