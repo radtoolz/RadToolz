@@ -1,4 +1,4 @@
-name: Build and Package XLL v5.00 Branch
+name: Build and Package XLL dev Branch
 
 # Limit the default token permissions
 permissions:
