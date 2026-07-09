@@ -1,4 +1,4 @@
-name: Build, Sign, and Release XLL
+name: Build, Package, Sign, and Release XLL
 
 # Limit the default token permissions
 permissions:
