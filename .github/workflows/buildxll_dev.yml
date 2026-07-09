@@ -6,6 +6,10 @@ permissions:
   actions: read
 
 on:
+  push:
+    branches:
+      - master
+      - dev
   workflow_dispatch:
 
 jobs:

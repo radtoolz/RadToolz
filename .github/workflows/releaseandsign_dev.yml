@@ -5,6 +5,10 @@ permissions:
   contents: read
 
 on:
+  push:
+    branches:
+      - master
+      - dev
   workflow_dispatch:
     inputs:
       version:
