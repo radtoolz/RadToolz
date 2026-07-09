@@ -6,11 +6,16 @@ permissions:
   actions: read
 
 on:
-  push:
-    branches:
-      - master
-      - dev
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build from'
+        required: true
+        type: choice
+        options:
+          - master
+          - dev
+        default: 'master'
 
 jobs:
   build_sign_and_package:
@@ -30,6 +35,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.inputs.branch }}
 
     - name: Validate caller is allowed to run this workflow (optional)
       # This step uses the secret ALLOWED_BUILD_USERS containing a comma-separated list of GitHub usernames.

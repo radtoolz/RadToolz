@@ -5,12 +5,16 @@ permissions:
   contents: read
 
 on:
-  push:
-    branches:
-      - master
-      - dev
   workflow_dispatch:
     inputs:
+      branch:
+        description: 'Branch to build from'
+        required: true
+        type: choice
+        options:
+          - master
+          - dev
+        default: 'master'
       version:
         description: 'Release version'
         required: true
@@ -38,6 +42,8 @@ jobs:
     # Checkout the repository
     - name: Checkout repository
       uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.inputs.branch }}
 
 
     - name: Validate caller is allowed to run this workflow (optional)
