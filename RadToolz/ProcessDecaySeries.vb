@@ -2,8 +2,42 @@
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop.Excel
 
+' The decay-chain calculation engine behind most of RadToolzFunctions.vb's
+' exported UDFs (AValue, DCF, EnumDecayChain, FGE, HalfLife, PECi, RadDecay,
+' SpA all route through GetDecayChain). Not itself a UDF - callers new up a
+' ProcessDecaySeries instance and drive it through InitBranches ->
+' GetDecayChain -> (read cDC) -> ClearBranches.
+'
+' RECURRING PATTERN NOTE (applies throughout this file, not repeated per
+' function below): most methods use the legacy VB6-style idiom of
+' "On Error GoTo HandleErrors" plus assigning the return value to the
+' function's own name (e.g. "ClearBranches = True") instead of Return/Try-
+' Catch. This is legacy unstructured error handling - per
+' section_29_stop_and_ask, modifying an existing On Error handler requires a
+' Stop-and-Ask, so none of it has been touched here; only comments have been
+' added. Two related idioms recur too: (1) many methods GoTo a HandleErrors
+' label that both logs via MsgBox and sets the function's return value to
+' False/an error string, so a caller only needs to check the boolean/Object
+' result, never an exception; (2) gdcdci()/cDC() throughout this file and its
+' callers is always a fixed-size array of Collection, one slot per decay-
+' chain branch, sized to Constants.maxBranches and indexed from 1 (slot 0 is
+' reserved for GetDecayChain's consolidated, deduplicated isotope list - see
+' GetDecayChain below). Also scattered through this file are single-word
+' comments like 'GetDecayChain or 'ListAll sitting after an unrelated
+' End Function - these are leftover procedure-list bookmarks from an older
+' editor/outlining convention, not documentation; preserved as harmless
+' relics rather than removed, since deleting them is outside a comment-only
+' pass.
 Public Class ProcessDecaySeries
 
+    ''' <summary>
+    ''' Sets every branch slot from 0 to Branches (inclusive) to Nothing,
+    ''' releasing the Collection references. Pairs with InitBranches, which
+    ''' allocates fresh Collections into the same slots - callers use
+    ''' InitBranches before a GetDecayChain call and ClearBranches after,
+    ''' once the branch data has been read out (see AValue/DCF/HalfLife/
+    ''' etc.'s ExitHere blocks in RadToolzFunctions.vb).
+    ''' </summary>
     Public Function ClearBranches(ByRef gdcdci() As Collection, Optional Branches As Integer = maxBranches) As Boolean
         '* Usage:       Clears the collection data structures
         '* Input:       gdcdci() - array of Collection object
@@ -59,6 +93,28 @@ HandleErrors:
         '* Returns:     Nothing, but gdcdci() is fully loaded and ready for use
         '* Author:      Backscatter enterprises
         '* Date:        8/25/2023
+        '* Notes:       sParent = "ALL" is a special case (used by RTZParams/
+        '*              ListAll's data dump) that bypasses the chain-walk
+        '*              entirely and dumps the full table into gdcdci(0).
+        '*              sTerminal = "END" is the other sentinel value,
+        '*              meaning "no specific terminal - keep every branch"
+        '*              (see VerifyDecayChain and CanReachTerminal below,
+        '*              both of which special-case it); EnumDecayChain is
+        '*              the caller that passes it. Instance tracks
+        '*              recursion depth within one branch/fork's own
+        '*              daughter chain (not one counter per branch); once
+        '*              a recursive call returns with Instance > 1 the
+        '*              caller knows it is still mid-branch and skips the
+        '*              branch-cleanup/sort work below (Instance > 1 GoTo
+        '*              ExitHere), which only the outermost (Instance = 1)
+        '*              call performs once the whole tree is built.
+        '*              currBranch is the branch slot being extended by
+        '*              this call; nextBranch (only meaningful inside the
+        '*              fork loop) is the first unused slot found for a
+        '*              newly forked branch. gdcdci(0) is reserved
+        '*              throughout for the final deduplicated, sorted
+        '*              isotope list built at the end of the outermost call
+        '*              - never a branch in its own right.
 
         Dim Msg As String
         Dim x As Integer
@@ -251,6 +307,12 @@ HandleErrors:
 
     'GetDecayChain
 
+    ''' <summary>
+    ''' Allocates a fresh, empty Collection into every branch slot from 0 to
+    ''' Branches (inclusive). Must be called before GetDecayChain, which
+    ''' assumes every gdcdci(x) it might touch is a live Collection (it
+    ''' checks .Count, never IsNothing, on most slots) rather than Nothing.
+    ''' </summary>
     Public Function InitBranches(ByRef gdcdci() As Collection, Optional Branches As Integer = maxBranches) As Boolean
         '* Usage:       Initializes the collection data structure
         '* Input:       gdcdci() - array of Collection object
@@ -293,6 +355,15 @@ HandleErrors:
         '* Returns:     True if successful, else False
         '* Author:      Backscatter enterprises
         '* Date:        10/29/2016
+        '* Notes:       uRngVal arrives as an already-fully-qualified Excel
+        '*              reference string (e.g. "[Book1.xlsx]Sheet1!$A$1"),
+        '*              produced by RTZParams via xlfReftext before calling
+        '*              in here - this method does not itself resolve an
+        '*              ExcelReference, it only parses the resulting text.
+        '*              The regex below splits that string into the sheet
+        '*              name (bracketed workbook name stripped) and the
+        '*              range address, since iExcel.Worksheets()/.Range()
+        '*              need them separately.
 
         On Error GoTo HandleErrors
 
@@ -305,6 +376,10 @@ HandleErrors:
         Dim iSheet As Worksheet
         Dim uSheet As String
         Dim uRng As String = ""
+        ' Matches "]<sheetname>!<range>" - e.g. "]Sheet1!$A$1" out of
+        ' "[Book1.xlsx]Sheet1!$A$1" - capturing the sheet name (an optional
+        ' single-quoted name is tolerated but not itself captured) and the
+        ' range address as the two groups read below.
         Dim pattern As String = "\](\w*)'?!(.*)"
         Dim rRegex As New Regex(pattern)
         Dim m As Match = rRegex.Match(uRngVal)
@@ -368,6 +443,14 @@ HandleErrors:
 
 HandleErrors:
 
+        ' 1004 ("Application-defined or object-defined error", the generic COM
+        ' automation failure Excel raises for a bad Range/Worksheets lookup)
+        ' and 9 ("Subscript out of range") are treated as benign here rather
+        ' than reported - both are swallowed and ListAll still reports
+        ' success. This tolerates a caller-supplied uRngVal that does not
+        ' resolve to a usable range/sheet (e.g. malformed reference text)
+        ' without popping an error dialog; any other error still falls
+        ' through to the MsgBox below.
         If Err.Number = 1004 Or Err.Number = 9 Then
             Err.Clear()
             ListAll = True
@@ -395,6 +478,17 @@ HandleErrors:
         '* Returns:     True if sParent is first and sTerminal is last OR sTerminal is END
         '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
+        '* Notes:       Called once per built branch, after GetDecayChain's
+        '*              recursion completes, to decide which branches
+        '*              survive (see the "Kill branches that do not
+        '*              terminate with sTerminal" loop in GetDecayChain).
+        '*              "sTerminal = END" always passes (a branch is kept
+        '*              regardless of what it actually ends on) - this is
+        '*              the same sentinel rule CanReachTerminal mirrors for
+        '*              its own pre-build pruning check, and the two must
+        '*              stay consistent - if they disagreed, GetDecayChain
+        '*              could prune a branch before building it that this
+        '*              method would otherwise have kept, or vice versa.
 
         Dim Msg As String
 
@@ -454,6 +548,16 @@ HandleErrors:
         '* Returns:     True if successful, else False
         '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
+        '* Notes:       fromDCI is typed Object because it is passed both a
+        '*              DecaySeriesItem straight out of the shared, cached
+        '*              pds table and (elsewhere, e.g. BubbleSortCollection)
+        '*              an existing branch item being re-copied - both are
+        '*              accessed the same way via LoadDecaySeriesItem's own
+        '*              late-bound DirectCast property reads. This defensive
+        '*              copy-via-LoadDecaySeriesItem is what keeps every
+        '*              caller from ever mutating a shared DecaySeriesItem
+        '*              instance in place, per the read-only contract
+        '*              documented on DecaySeriesRepository.GetAll/GetAllList.
 
         Dim dsi As DecaySeriesItem
         Dim bRsp As Boolean
@@ -551,6 +655,24 @@ HandleErrors:
         '* Returns:     True sort is successful
         '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
+        '* Notes:       OptionalSortOrder: 1 = no sort (the default; this
+        '*              function returns immediately without touching
+        '*              gdcdci), 2 = ascending mass, 3 = descending mass -
+        '*              see EnumDecayChain's own OptionalSortOrder argument,
+        '*              which is threaded straight through GetDecayChain to
+        '*              here. A classic bubble sort: repeated passes
+        '*              swapping adjacent out-of-order pairs until a full
+        '*              pass makes no swaps (NoExchanges stays True). A
+        '*              "swap" here is not an in-place exchange - since
+        '*              Collection has no indexer-based Item(i) = value
+        '*              setter, each swap removes the item at i and
+        '*              re-Adds it as a new (copied, via LoadDecaySeriesItem)
+        '*              item positioned "before:=" the item now at i+1. This
+        '*              is O(n) per swap on top of the O(n^2) comparisons
+        '*              already inherent to bubble sort - acceptable only
+        '*              because gdcdci(0) here is the deduplicated per-call
+        '*              isotope list (bounded by chain length), not the full
+        '*              ~5,478-row database.
 
         Dim dsi As DecaySeriesItem
         Dim i As Integer
@@ -612,6 +734,19 @@ HandleErrors:
         '*              False if mass A = mass B AND sym A > sym B
         '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
+        '* Notes:       Isotope strings are always "<Symbol>-<Mass>", with
+        '*              an optional trailing "M" marking a metastable state
+        '*              (e.g. "TC-99M"). massA/massB pull the substring
+        '*              after the "-" and strip a trailing "M" before Val()
+        '*              converts it to a number, so metastable states sort
+        '*              by the same mass as their ground state and are only
+        '*              distinguished afterward by the symA/symB comparison
+        '*              (which re-appends "M" so e.g. "TC-99M" sorts after
+        '*              "TC-99"). The return value's meaning flips with
+        '*              OptionalSortOrder (see the Select Case below) -
+        '*              despite the fixed doc above, it is really "should a
+        '*              and b swap" per the caller's requested direction,
+        '*              not always literally "mass A < mass B".
 
         '***Assert a<>b
 
@@ -683,6 +818,18 @@ HandleErrors:
         '* Returns:     True if successful, else False
         '* Author:      Backscatter enterprises
         '* Date:        7/19/2015
+        '* Notes:       Despite the name, this does not load anything from a
+        '*              collection - it field-by-field copies fromDSI (an
+        '*              Object, late-bound duck typing: works against any
+        '*              object exposing these same property names, whether
+        '*              a real DecaySeriesItem or a Collection.Item(x)
+        '*              result) into toDSI, a caller-owned DecaySeriesItem
+        '*              instance. This is the one place that performs the
+        '*              "copy properties into a new DecaySeriesItem" step
+        '*              referenced by DecaySeriesRepository's read-only
+        '*              contract - every consumer that needs a modifiable
+        '*              DecaySeriesItem goes through here rather than
+        '*              mutating a shared cached instance.
 
         Dim Msg As String
 
@@ -722,6 +869,19 @@ HandleError:
 
     'ListAll
 
+    ''' <summary>
+    ''' Converts an Excel cell-reference argument (an ExcelReference/xlref,
+    ''' as accepted by AllowReference:=True parameters) into a live
+    ''' Microsoft.Office.Interop.Excel.Range, via the XLL C API's xlfReftext
+    ''' to get the address text and then a normal COM Range lookup.
+    ''' </summary>
+    ''' <remarks>
+    ''' NOTE: no caller in this solution invokes ReferenceToRange (verified by
+    ''' searching all .vb files) - RTZFunctions/RTZParams/ListAll each
+    ''' resolve their own range reference inline with the same xlfReftext +
+    ''' iExcel.Range() pattern instead of calling this shared helper.
+    ''' Preserved as-is (comment-only pass; not removed).
+    ''' </remarks>
     Private Shared Function ReferenceToRange(<ExcelArgument(AllowReference:=True)> xlref As Object) As Object
         Dim strAddress As String = DirectCast(XlCall.Excel(XlCall.xlfReftext, xlref, True), String)
         ReferenceToRange = ExcelDnaUtil.Application.Range(strAddress)

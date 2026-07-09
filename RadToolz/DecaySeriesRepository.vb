@@ -45,16 +45,18 @@ Public Module DecaySeriesRepository
 
     ''' <summary>
     ''' Returns the full decay-series database as a Collection of
-    ''' DecaySeriesItem, in the same order as the original hardcoded
-    ''' table. Order matters: GetDecayChain's branch-point logic in
+    ''' DecaySeriesItem, in the same order as the embedded JSON table.
+    ''' Order matters: GetDecayChain's branch-point logic in
     ''' ProcessDecaySeries.vb relies on sequential position and on the
     ''' same isotope symbol legitimately appearing more than once (once
     ''' per branch).
     ''' </summary>
-    ''' <returns>A new Collection each call. Building it is just 182
-    ''' Collection.Add() calls against already-cached objects - no JSON
-    ''' parsing and no new DecaySeriesItem allocations after the first
-    ''' call.</returns>
+    ''' <returns>A new Collection each call. Building it is one
+    ''' Collection.Add() call per entry in the loaded table (currently
+    ''' ~5,478 isotope records from the ENSDF-sourced data - see the
+    ''' Count property - not the 182 of the old hardcoded table) against
+    ''' already-cached objects. No JSON parsing and no new DecaySeriesItem
+    ''' allocations after the first call.</returns>
     Public Function GetAll() As Collection
         Dim result As New Collection
 

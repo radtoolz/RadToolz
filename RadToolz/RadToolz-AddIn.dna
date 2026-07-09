@@ -1,6 +1,9 @@
 <DnaLibrary Name="RadToolz Add-In" RuntimeVersion="v4.0">
   <ExternalLibrary Path="RadToolz.dll" LoadFromBytes="true" Pack="true" />
-  
+  <!-- DDR-0003: packed so the released XLL is self-contained - no loose
+       Newtonsoft.Json.dll needs to ship or be present alongside it. -->
+  <Reference Path="Newtonsoft.Json.dll" Pack="true" />
+
   <!-- 
        The RuntimeVersion attribute above allows two settings:
        * RuntimeVersion="v2.0" - for .NET 2.0, 3.0 and 3.5

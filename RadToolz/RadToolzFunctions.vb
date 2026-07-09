@@ -5,6 +5,26 @@ Imports Microsoft.Office.Interop.Excel
 
 'REQUIRES:  NuGet package ExcelDna
 
+' This module is RadToolz's exported UDF surface: every Public Function
+' decorated with <ExcelFunction(...)> below is registered with Excel by name
+' (per section_20_api_and_backward_compatibility - live workbooks reference
+' these by name and argument position, so names/order/semantics here are a
+' shipped contract, not internal implementation). Undecorated Private helpers
+' (TGSigma, and MassAttenuation despite carrying an ExcelFunction attribute -
+' see its own note below) are internal only.
+'
+' RECURRING PATTERN NOTE (applies throughout this file, not repeated per
+' function): many functions contain a line like
+' "If Trim(x) = "" Or IsNothing(x) Then x = <default>" for an Optional
+' parameter that already declares that same default in its signature (e.g.
+' "Optional DCFType As String = "X""), commented inline as a "fix"/"kludge"
+' for "default values are not being stored." This works around an
+' Excel/Excel-DNA behavior where an omitted Optional String argument can
+' arrive as an empty string rather than the declared default under certain
+' call paths (observed, long-standing workaround in this codebase - not
+' independently re-verified here). As with the On Error/function-name-as-
+' return-value idiom noted in ProcessDecaySeries.vb, these are legacy
+' patterns preserved as-is; only comments have been added.
 <Assembly: CLSCompliant(True)>
 
 Public Module MyFunctions
@@ -22,6 +42,16 @@ Public Module MyFunctions
         '* Returns:     The number to the requested number of digits
         '* Author:      Backscatter enterprises
         '* Date:        10/31/2015
+        '* Notes:       Math.Round(Decimal, Integer) without an explicit
+        '*              MidpointRounding argument defaults to
+        '*              MidpointRounding.ToEven ("banker's rounding") for
+        '*              exact-midpoint values (e.g. 0.5 -> 0, 1.5 -> 2) -
+        '*              not the round-half-away-from-zero convention the
+        '*              name "ANSIRound" might suggest to a caller. Existing
+        '*              behavior preserved as-is; noted here since the
+        '*              function name and this default could otherwise
+        '*              mislead a maintainer or a caller relying on a
+        '*              specific midpoint convention.
 
         Return Math.Round(num, digits)
 
@@ -43,6 +73,17 @@ Public Module MyFunctions
         '* Returns:     either A1 or A2 value
         '* Author:      Backscatter enterprises
         '* Date:        1/5/2025
+        '* Notes:       A1/A2 values are stored in the database in TBq
+        '*              (see DecaySeriesItem.A1/A2); AConv converts to Ci
+        '*              when Unit:="CI" (1 TBq = 1e12 Bq, divided by
+        '*              Constants.Ci2Bq to get Ci). A negative stored value
+        '*              is the database's convention for "no limit" (see
+        '*              the "Unlimited" case below); zero means the
+        '*              radionuclide is not listed for that value type.
+        '*              GetDecayChain is called with sParent = sTerminal =
+        '*              Isotope, which per its own Notes takes the fast,
+        '*              non-branching path and returns just that one
+        '*              isotope's own record in cDC(1).
 
         'Variables
         Dim pds As New ProcessDecaySeries
@@ -160,6 +201,20 @@ HandleErrors:
         '* Returns:     either inhalation or ingestion dose conversion factor (rem/uCi) or (Sv/Bq)
         '* Author:      Backscatter enterprises
         '* Date:        1/1/2025
+        '* Notes:       DCFAMAD:="9" is a sentinel for "unspecified/take the
+        '*              maximum," not a real AMAD (aerosol median diameter)
+        '*              value - only "1" and "5" (microns) are real ICRP-68
+        '*              AMAD values; ICRP-72 only ever has "1" (forced a few
+        '*              lines below since ICRP-72 has no AMAD-5 data).
+        '*              Similarly DCFType:="X" means "maximum absorption
+        '*              type," not a real S/M/F value. The branching below
+        '*              resolves, in order: ING (no Type/AMAD choice
+        '*              exists for ingestion) -> both Type and AMAD
+        '*              unspecified (max of all 6 INH values) -> only Type
+        '*              unspecified (max across S/M/F for the given AMAD)
+        '*              -> only AMAD unspecified (max across 1/5 for the
+        '*              given Type) -> both specified (direct lookup, no
+        '*              Max() needed).
 
         'Variables
         Dim pds As New ProcessDecaySeries
@@ -379,6 +434,17 @@ HandleErrors:
         '* Returns:     Decay chain member value
         '* Author:      Backscatter enterprises
         '* Date:        12/25/2014
+        '* Notes:       Passes sTerminal:="END" to GetDecayChain, the
+        '*              sentinel meaning "build and keep every branch" (see
+        '*              GetDecayChain's own Notes) - this is the one UDF
+        '*              that genuinely wants the full forked tree, since
+        '*              Member indexes into the complete, deduplicated,
+        '*              optionally-sorted isotope list in cDC(0) (1-based,
+        '*              per the Collection convention throughout this
+        '*              codebase). This also makes EnumDecayChain and
+        '*              RadDecay the only two UDFs that exercise
+        '*              GetDecayChain's fork/recursion path at all - see
+        '*              DDR-0002 for why that matters to performance.
 
         'Variables
         Dim n As Double
@@ -448,6 +514,20 @@ HandleErrors:
         '* Returns:     FGE in grams
         '* Author:      Backscatter enterprises
         '* Date:        1/1/2025
+        '* Notes:       N (450 g for Pu-239 basis, 700 g for U-235 basis)
+        '*              and D (each listed radionuclide's own minimum
+        '*              critical mass in grams) come from ANSI/ANS-8.1 and
+        '*              8.15 (see RTZRefs for the full citations). FGE =
+        '*              N/D * (Activity / specific activity of
+        '*              Radionuclide) converts an arbitrary fissile
+        '*              radionuclide's activity into "grams of the basis
+        '*              isotope that would pose an equivalent criticality
+        '*              concern" - D scales the raw mass ratio by how much
+        '*              more/less fissile the given radionuclide is versus
+        '*              the basis isotope's own critical mass. A
+        '*              radionuclide not in the D table returns FGE = 0
+        '*              (treated as non-fissile for this purpose) rather
+        '*              than an error.
 
         On Error GoTo HandleErrors
 
@@ -553,6 +633,12 @@ HandleErrors:
         '* Returns:     Half-life in time unit
         '* Author:      Backscatter enterprises
         '* Date:        1/25/2025
+        '* Notes:       k accumulates a divide-by-N conversion factor from
+        '*              seconds into the requested TimeUnit (e.g. /60 for
+        '*              minutes, /60/60/24/365.25 for years - a Julian/
+        '*              calendar-average year, not a specific calendar
+        '*              year). Half-life = k * ln(2) / lambda, the standard
+        '*              relationship between decay constant and half-life.
 
         'Variables
         Dim k As Double
@@ -639,6 +725,20 @@ HandleErrors:
         '* Returns:     PE-Ci of Isotope
         '* Author:      Backscatter enterprises
         '* Date:        9/23/2017
+        '* Notes:       Plutonium equivalent curies expresses any
+        '*              radionuclide's inhalation hazard in terms of "how
+        '*              many curies of Pu-239 would pose the same dose,"
+        '*              scaling Activity by the ratio of the two isotopes'
+        '*              inhalation DCFs. The Pu-239 reference DCF is
+        '*              hardcoded to Type:="M", AMAD:="5" (Moderate
+        '*              absorption, 5 micron) - the ICRP-normalized
+        '*              reference case for this metric per the class-level
+        '*              function description, not a value the caller can
+        '*              vary. The first DCF() call (with the caller's own
+        '*              DCFType/DCFAMAD) doubles as input validation: any
+        '*              non-numeric result from DCF() (an error string) is
+        '*              propagated straight out via GoTo ExitHere before
+        '*              the Pu-239 lookup or division even runs.
 
         'Variables
         Dim PuDCF As Object
@@ -709,6 +809,52 @@ HandleErrors:
         '* Returns:     Activity of TerminalMember after DecayTime, assuming 0 initial activity
         '* Author:      Backscatter enterprises
         '* Date:        12/24/2025
+        '* Notes:       Implements the general Bateman equation for a serial
+        '*              decay chain (parent with 0 initial daughter
+        '*              activity in-growing into TerminalMember over time).
+        '*              For a chain of n isotopes ending at TerminalMember,
+        '*              with decay constants lambda_1..lambda_n and initial
+        '*              parent atom count N0:
+        '*                N_n(t) = N0 * BR * lambda_1*...*lambda_(n-1) *
+        '*                         sum_{i=1}^{n} [ exp(-lambda_i * t) /
+        '*                           prod_{j<>i} (lambda_j - lambda_i) ]
+        '*              and activity = lambda_n * N_n(t). The code below
+        '*              computes this per-branch: "a" (inner loop over j) is
+        '*              the product term prod_{j<>i} lambda_j/(lambda_j -
+        '*              lambda_i) for a given i (equivalent to the classic
+        '*              Bateman coefficient once combined with the leading
+        '*              lambda product via BR - see below); "b" (outer loop
+        '*              over i) sums lambda_i * a * exp(-lambda_i * t) across
+        '*              every isotope i in the branch. BR is not a physical
+        '*              decay constant but the product of every branching
+        '*              ratio along the chain (1.0 unless the branch passed
+        '*              through a fork), scaling the whole branch's
+        '*              contribution by the fraction of decays that actually
+        '*              followed this specific path. This is done once per
+        '*              surviving branch (every branch whose last isotope is
+        '*              TerminalMember, per GetDecayChain's own filtering);
+        '*              Nnt accumulates the atom count across all such
+        '*              branches before the final "* Lambda" (TerminalMember's
+        '*              own decay constant, captured while scanning branches
+        '*              below) converts atoms to activity (Activity =
+        '*              lambda * N). If TerminalMember is the same isotope as
+        '*              StartingMember (chain length 1), the general formula
+        '*              degenerates and the code instead takes the SimpleDecay
+        '*              shortcut - straight single-isotope exponential decay,
+        '*              A(t) = A0 * exp(-lambda * t).
+        '*              The deltaLambda = 0 trap below guards the case where
+        '*              two isotopes in the same branch share an identical
+        '*              decay constant, which would divide by zero in the
+        '*              Bateman coefficient; the perturbation used is a
+        '*              simplification, not the mathematically exact
+        '*              degenerate-Bateman closed form (which introduces a
+        '*              polynomial-in-t term) - acceptable per the existing
+        '*              comment that no isotope pair in the current table
+        '*              actually collides. The RadDecay < 0 clamps (here and
+        '*              in SimpleDecay) guard against small negative results
+        '*              from floating-point cancellation in the sum-of-
+        '*              exponentials above (physically, activity cannot be
+        '*              negative).
 
         'Variables
         Dim i As Double
@@ -793,7 +939,9 @@ HandleErrors:
         N0 = A0 / DirectCast(cDC(0).Item(1).Lambda, Double) 'all branches have the same parent
         Nnt = 0
 
-        'Loop for each branch
+        'Loop for each branch (see the Bateman-equation Notes above the
+        'function signature for what this loop, and the nested i/j loops
+        'below, are computing)
         For x = 1 To maxBranches
             'Branches are contiguous
             If cDC(x) IsNot Nothing Then
@@ -878,6 +1026,16 @@ HandleErrors:
         '* Returns:     Attribution text
         '* Author:      Backscatter enterprises
         '* Date:        1/25/2025
+        '* Notes:       no_input exists only so this UDF has at least one
+        '*              (optional, unused) argument - see the shared
+        '*              no_input pattern on RTZLicense/RTZRefs/RTZUpdate/
+        '*              RTZVers, all of which accept and immediately
+        '*              discard it the same way. Year(Now) uses the local
+        '*              machine clock/timezone for the copyright year, which
+        '*              is intentional for a human-readable attribution
+        '*              string (not a calculation input), so the general
+        '*              "avoid current-culture-dependent values" guidance
+        '*              does not apply here.
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
@@ -913,6 +1071,22 @@ HandleErrors:
         '* Returns:     Title including version
         '* Author:      Backscatter enterprises
         '* Date:        1/1/2025
+        '* Notes:       IsMacroType:=True (see the ExcelFunction attribute
+        '*              above) is required here because this function
+        '*              writes to worksheet cells directly via the COM
+        '*              object model (iSheet.Cells(...) = ...) - normal
+        '*              UDFs must be side-effect free (they may only return
+        '*              their own cell's value), and Excel only permits
+        '*              this kind of direct-write access from macro-type
+        '*              functions, which run with different threading/
+        '*              re-entrancy constraints than ordinary UDFs. The
+        '*              cCellAddr-vs-uCellAddr comparison below guards
+        '*              against uRng pointing at the very cell that calls
+        '*              RTZFunctions - without it, writing to that cell
+        '*              would overwrite the formula that produced this
+        '*              call, which Excel's own circular-reference
+        '*              detection would not catch (the write happens via
+        '*              COM, outside Excel's formula dependency graph).
 
         On Error GoTo HandleErrors
 
@@ -1006,6 +1180,13 @@ HandleErrors:
 
         RTZFunctions = "Functions for Radtoolz version " & RTZVers()
 
+        ' Assumption: uRng is read here only through the C API (Excel(xlfReftext, ...))
+        ' above, not through a normal parameter read Excel's dependency tracker would
+        ' see automatically for a macro-type function; this self-assignment is a
+        ' long-standing convention in this codebase intended to make Excel register
+        ' uRng's referenced range as a real input to this call, so the function
+        ' recalculates if that range's contents change. Not independently re-verified
+        ' against current Excel-DNA internals here - preserved as-is either way.
         uRng = uRng 'dummy operation to calm the Excel dependency tree down!
 
         Exit Function
@@ -1030,6 +1211,11 @@ HandleErrors:
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
         '* Date:        12/24/2024
+        '* Notes:       Process.Start(license) launches the OS-default
+        '*              handler for the URL (normally the default browser),
+        '*              only after the user opts in via the MsgBox prompt -
+        '*              never launched unconditionally. The URL is a fixed
+        '*              literal, not derived from any workbook/user input.
 
         Dim Msg As Object
         Dim license As String = "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt"
@@ -1067,6 +1253,11 @@ HandleErrors:
         '* Returns:     Title including version
         '* Author:      Backscatter enterprises
         '* Date:        8/14/2015
+        '* Notes:       Same self-reference guard and IsMacroType:=True
+        '*              rationale as RTZFunctions above - this also writes
+        '*              directly to the worksheet via COM (through
+        '*              pds.ListAll, which dumps the ~5,478-row isotope
+        '*              table starting at uRng).
 
         On Error GoTo HandleErrors
 
@@ -1108,6 +1299,16 @@ HandleErrors:
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
         '* Date:        3/28/2025
+        '* Notes:       Static bibliography text only - the citations below
+        '*              back the data/algorithms actually implemented
+        '*              elsewhere (ENSDF -> DecaySeriesRepository's isotope
+        '*              table; ICRP-119 -> the DCF* fields on
+        '*              DecaySeriesItem and the DCF() function; GENII ->
+        '*              XoQ/TGSigma's Gaussian-plume dispersion model;
+        '*              ANSI 8.1/8.15 -> FGE's N/D constants; XCOM ->
+        '*              MassAttenuation's fit coefficients). No logic here
+        '*              depends on this text; it exists purely to give
+        '*              users a citable source list via MsgBox.
 
         Dim Msg As String
         Dim ENSDF As String
@@ -1184,6 +1385,30 @@ HandleErrors:
         '* Returns:     Update status
         '* Author:      Backscatter enterprises
         '* Date:        1/25/2025
+        '* Notes:       versNum is compared against the two compile-time
+        '*              constants RadToolzVersion/RadToolzPreRelease
+        '*              (Constants.vb) rather than a simple equality check,
+        '*              to distinguish four states: a newer version is
+        '*              published (offer to update); the published version
+        '*              is numerically behind this build's own
+        '*              RadToolzVersion (this build is itself a pre-release
+        '*              of a not-yet-published version); the published
+        '*              version number matches this build's but this build
+        '*              still carries a pre-release marker (the full
+        '*              release of the current version number has now
+        '*              shipped - offer to update to it); or an exact,
+        '*              fully-released match (up to date). On Error GoTo in
+        '*              VB.NET (unlike VB6) also intercepts unhandled CLR
+        '*              exceptions, mapping common ones to a legacy
+        '*              Err.Number - the "Case 5" special case in
+        '*              HandleErrors below is written for that mapped
+        '*              value (Assumption: not independently re-verified
+        '*              against every failure mode GetTxtRecord/
+        '*              Double.TryParse could raise - GetTxtRecord itself
+        '*              already catches its own exceptions and returns a
+        '*              descriptive string rather than throwing, so in
+        '*              practice this path is only reached for something
+        '*              outside GetTxtRecord's own Try/Catch).
 
         On Error GoTo HandleErrors
 
@@ -1258,6 +1483,13 @@ HandleErrors:
         '* Returns:     Version number, from public constant
         '* Author:      Backscatter enterprises
         '* Date:        1/25/2025
+        '* Notes:       Formats with InvariantCulture rather than the
+        '*              current thread culture, so the version string
+        '*              (embedded in workbook text, RTZAttribution, and
+        '*              DNS version comparisons in RTZUpdate) always uses a
+        '*              "." decimal point regardless of the user's locale -
+        '*              this is the correct pattern per
+        '*              excel_object_model_best_practices' locale guidance.
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
@@ -1288,6 +1520,17 @@ HandleErrors:
         '* Returns:     The number to the requested number of significant figures
         '* Author:      Backscatter enterprises
         '* Date:        10/31/2015
+        '* Notes:       Unlike ANSIRound (fixed decimal places), this rounds
+        '*              to a fixed count of significant digits regardless of
+        '*              magnitude. d = ceiling(log10(|num|)) is the number's
+        '*              order of magnitude (how many digits before the
+        '*              decimal point); power = sf - d is how many places to
+        '*              shift so that rounding to the nearest integer at
+        '*              that shifted scale rounds to exactly sf significant
+        '*              digits. num = 0 is special-cased first since
+        '*              log10(0) is undefined (-Infinity). Also used
+        '*              internally as a formatting helper by MassAttenuation,
+        '*              RUFormat, and XoQ, not only as a user-facing UDF.
 
         If num = 0 Then Return 0
 
@@ -1312,6 +1555,22 @@ HandleErrors:
         '* Returns:     Specific Activity in Ci/g or Bq/kg
         '* Author:      Backscatter enterprises
         '* Date:        1/1/2025
+        '* Notes:       Specific activity (activity per unit mass) =
+        '*              lambda * Avogadro's number / atomic mass / (Bq per
+        '*              Ci), scaled by SIConv for Bq/kg output. The mass
+        '*              number is parsed out of the isotope symbol itself
+        '*              (e.g. "137" from "CS-137") rather than looked up
+        '*              from a separate atomic-mass field - a trailing "M"
+        '*              (metastable marker, e.g. "TC-99M") is stripped
+        '*              first so the mass number parses correctly; this
+        '*              treats the metastable state's mass as identical to
+        '*              its ground state, which is physically correct (same
+        '*              nuclide, different energy state) but means this
+        '*              approximates true atomic mass with the integer mass
+        '*              number - adequate for this ratio since both appear
+        '*              in the same formula this way in the source
+        '*              literature (GENII/ICRP conventions cited in
+        '*              RTZRefs).
 
         'Variables
         Dim m As Integer
@@ -1386,6 +1645,47 @@ HandleErrors:
         '* Returns:     Dilution factor s/m3
         '* Author:      Backscatter enterprises
         '* Date:        1/1/2025
+        '* Notes:       Standard Gaussian plume atmospheric dispersion model
+        '*              with multiple ground/mixing-layer-height image
+        '*              reflections (the GENII methodology cited in
+        '*              RTZRefs). k(0) is the 1/(2*pi*u*sigma_y*sigma_z)
+        '*              normalization; k(1) is the crosswind (y) Gaussian
+        '*              term; k(2) is the direct vertical term for a
+        '*              receptor at height z from a source at effective
+        '*              stack height h; k(3) is that source's mirror image
+        '*              reflected off the ground (z=0), which every Gaussian
+        '*              ground-reflection model includes even with no
+        '*              mixing-layer ceiling. The n = 1 To 5 loop adds
+        '*              successive image-source terms for repeated
+        '*              reflection between the ground and the mixing/
+        '*              ceiling height L (an inversion layer trapping the
+        '*              plume): k(4)/k(5)/k(6)/k(7) are the four image
+        '*              combinations at each reflection order n, summed
+        '*              into k(8). Five reflection orders is a standard
+        '*              truncation - higher orders contribute negligibly
+        '*              once the plume has diffused enough to reach L
+        '*              repeatedly. DF (dry deposition depletion factor) is
+        '*              a stub fixed at 1 - see the existing "<future
+        '*              feature>" comment below; no depletion is currently
+        '*              modeled. TGSigma below has no defined fit for
+        '*              Distance < 100m or > 50000m (its Else branch leaves
+        '*              az(PG)/bz(PG)/cz(PG) all at 0, so TGSigma("z", ...)
+        '*              returns exactly 0 for those ranges rather than
+        '*              raising an error) - a Distance outside the fitted
+        '*              100-50000m interval therefore silently makes oz = 0
+        '*              here, which makes k(0) = 1/(2*pi*u*oy*oz) a
+        '*              division by zero (Double arithmetic: this yields
+        '*              +Infinity rather than throwing). Assumption, not
+        '*              re-verified by running this path: that Infinity then
+        '*              causes SigFig's Convert.ToInt32(Math.Ceiling(
+        '*              Math.Log10(Infinity))) call to throw
+        '*              OverflowException, which XoQ has no Try/Catch or On
+        '*              Error to intercept - Excel-DNA's own top-level UDF
+        '*              exception handling would be what ultimately turns
+        '*              that into a #VALUE! cell result, not this function's
+        '*              own error handling. Pre-existing behavior, outside
+        '*              this comment-only pass's scope to change; flagged
+        '*              here rather than fixed silently.
 
         'Variables
 
@@ -1449,6 +1749,27 @@ HandleErrors:
 
     End Function 'XoQ
 
+    ''' <summary>
+    ''' Tadmor-Gur power-law fit for the horizontal (y) or vertical (z)
+    ''' plume dispersion coefficient sigma, as a function of downwind
+    ''' Distance (meters) and Pasquill-Gifford atmospheric stability class
+    ''' PG (0-5 for A-F, set by XoQ before calling). Formula: sigma =
+    ''' a*(Distance^b) + c, with a/b/c fit constants that differ by
+    ''' direction, stability class, and (for the vertical/z fit only)
+    ''' distance bracket. Internal helper for XoQ only.
+    ''' </summary>
+    ''' <remarks>
+    ''' The horizontal (y) fit constants (ay/by/cy) are a single fit valid
+    ''' across all modeled distances. The vertical (z) fit constants (az/bz)
+    ''' are picked per Distance bracket (100-5000m, 5000-50000m) since
+    ''' vertical dispersion growth changes character as the plume samples a
+    ''' deeper part of the boundary layer; cz is never assigned anywhere in
+    ''' this function and is therefore always 0.0 (Double's default) for
+    ''' every stability class - the z fit is a pure power law with no
+    ''' additive offset. See XoQ's own Notes for what happens when Distance
+    ''' falls outside the two z-fit brackets (both az and bz collapse to 0
+    ''' for that PG, driving sigma_z itself to 0).
+    ''' </remarks>
     Private Function TGSigma(Direction As String, PG As Integer, Distance As Double) As Double
 
         Dim ay(5) As Double
@@ -1553,6 +1874,38 @@ HandleErrors:
         '* Author:      Backscatter enterprises
         '* Date:        3/28/2025
         '* Notes:       Not tested for use outside beta community.
+        '*              a0..a3/b1..b3 are empirical curve-fit coefficients
+        '*              (least-squares fit against tabulated XCOM
+        '*              photon-cross-section data - see RTZRefs) per
+        '*              material, fitting mass attenuation coefficient as a
+        '*              sum of three power-law terms in Energy: a0 + a1*
+        '*              Energy^b1 + a2*Energy^b2 + a3*Energy^b3. Only valid
+        '*              within the checked 0.05-2.0 MeV range - outside it
+        '*              the fit is not guaranteed to track the physical
+        '*              attenuation curve, which is why Energy is validated
+        '*              immediately below. Lead ("L") is the one material
+        '*              with two separate fits split at 0.1 MeV; Assumption
+        '*              (plausible physical rationale, not independently
+        '*              re-verified against the source fit here): this
+        '*              likely reflects lead's K-shell photoelectric
+        '*              absorption edge near 88 keV, where the attenuation
+        '*              curve's shape changes sharply enough that a single
+        '*              power-law fit across the whole 0.05-2.0 MeV range
+        '*              would not track it well.
+        '* Notes (2):    ExcelFunction/ExcelArgument attributes are present
+        '*              on this Private Function, but Excel-DNA only
+        '*              registers Public members as worksheet functions -
+        '*              being Private means this never actually appears in
+        '*              the Function Wizard or is directly callable from a
+        '*              cell, regardless of these attributes. Verified: no
+        '*              other function in this solution calls
+        '*              MassAttenuation either, so it is currently
+        '*              unreachable code entirely (consistent with "Not
+        '*              tested for use outside beta community" above -
+        '*              reads as an in-progress feature not yet wired up
+        '*              to a caller). Preserved as-is; reported here rather
+        '*              than removed, since deleting it is outside a
+        '*              comment-only pass.
 
         Dim Material As String
         Dim a0 As Double
@@ -1644,6 +1997,22 @@ HandleErrors:
         '* Author:      Backscatter enterprises
         '* Date:        6/6/2025
         '* Notes:       Originally needed by Misa Y.  Name suggestion Bill F.
+        '* Notes (2):   Common laboratory-analytical-result convention:
+        '*              result and uncertainty are rendered sharing one
+        '*              common power-of-ten exponent (computed from
+        '*              whichever of r/u has the larger magnitude), each
+        '*              reduced to a mantissa at the requested precision -
+        '*              e.g. r=1230, u=45 at precision 2 renders relative to
+        '*              10^3, giving mantissas 1.23 and 0.05. The "<"
+        '*              prefix (LT) signals a non-detect/below-uncertainty
+        '*              result per the ExcelArgument description on r
+        '*              above, when the result does not exceed its own
+        '*              uncertainty. r and u are first passed through
+        '*              SigFig (precision + 1 significant figures) before
+        '*              magnitude/mantissa extraction, so the mantissa
+        '*              digits shown are already rounded consistently
+        '*              rather than truncated by the later ToString(PrecisionStr)
+        '*              formatting alone.
 
         Dim LT As String
         Dim Rmag As Double
