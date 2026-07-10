@@ -53,12 +53,24 @@ jobs:
         with:
           ref: ${{ matrix.branch.sha }}
 
+      - name: Check for workflow files
+        id: check-workflows
+        run: |
+          if compgen -G ".github/workflows/*.yml" > /dev/null || compgen -G ".github/workflows/*.yaml" > /dev/null; then
+            echo "has_workflows=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_workflows=false" >> "$GITHUB_OUTPUT"
+            echo "No .github/workflows/*.yml(.yaml) files on ${{ matrix.branch.name }}; skipping CodeQL." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Initialize CodeQL
+        if: steps.check-workflows.outputs.has_workflows == 'true'
         uses: github/codeql-action/init@v4
         with:
           languages: actions
 
       - name: Perform CodeQL Analysis
+        if: steps.check-workflows.outputs.has_workflows == 'true'
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:actions"
