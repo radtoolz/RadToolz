@@ -234,6 +234,37 @@
     <Rule Id="RS1028" Action="Warning" />
   </Rules>
   <Rules AnalyzerId="SecurityCodeScan.VS2019" RuleNamespace="SecurityCodeScan.VS2019">
-    <Rule Id="SCS0012" Action="Warning" />
+    <Rule Id="SCS0012" Action="Error" />
+    <Rule Id="SCS0000" Action="Error" />
+    <Rule Id="SCS0001" Action="Error" />
+    <Rule Id="SCS0002" Action="Error" />
+    <Rule Id="SCS0003" Action="Error" />
+    <Rule Id="SCS0004" Action="Error" />
+    <Rule Id="SCS0005" Action="Error" />
+    <Rule Id="SCS0006" Action="Error" />
+    <Rule Id="SCS0007" Action="Error" />
+    <Rule Id="SCS0008" Action="Error" />
+    <Rule Id="SCS0009" Action="Error" />
+    <Rule Id="SCS0010" Action="Error" />
+    <Rule Id="SCS0011" Action="Error" />
+    <Rule Id="SCS0013" Action="Error" />
+    <Rule Id="SCS0015" Action="Error" />
+    <Rule Id="SCS0016" Action="Error" />
+    <Rule Id="SCS0017" Action="Error" />
+    <Rule Id="SCS0018" Action="Error" />
+    <Rule Id="SCS0019" Action="Error" />
+    <Rule Id="SCS0021" Action="Error" />
+    <Rule Id="SCS0022" Action="Error" />
+    <Rule Id="SCS0023" Action="Error" />
+    <Rule Id="SCS0024" Action="Error" />
+    <Rule Id="SCS0026" Action="Error" />
+    <Rule Id="SCS0027" Action="Error" />
+    <Rule Id="SCS0028" Action="Error" />
+    <Rule Id="SCS0029" Action="Error" />
+    <Rule Id="SCS0030" Action="Error" />
+    <Rule Id="SCS0031" Action="Error" />
+    <Rule Id="SCS0032" Action="Error" />
+    <Rule Id="SCS0033" Action="Error" />
+    <Rule Id="SCS0034" Action="Error" />
   </Rules>
 </RuleSet>
