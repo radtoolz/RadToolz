@@ -89,7 +89,7 @@ Public Module MyFunctions
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
         Dim AConv As Double, ATemp As Double
 
         'fix for default values are not being stored in the function variable
@@ -140,9 +140,9 @@ Public Module MyFunctions
         'Return A1 or A2 value in specified units by multiplying by AConv
         Select Case A1A2
             Case "1"
-                ATemp = DirectCast(cDC(1).Item(1).A1, Double) * AConv
+                ATemp = cDC(1).Item(1).A1 * AConv
             Case "2"
-                ATemp = DirectCast(cDC(1).Item(1).A2, Double) * AConv
+                ATemp = cDC(1).Item(1).A2 * AConv
             Case Else 'should never get here
 
         End Select
@@ -221,7 +221,7 @@ HandleErrors:
         Dim bRsp As Boolean
         Dim Msg As String
         Dim DCFTemp As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
         Dim S1 As Double, S5 As Double, M1 As Double, M5 As Double, F1 As Double, F5 As Double, SIConv As Double
 
         'Create SI conversion factor
@@ -304,10 +304,10 @@ HandleErrors:
         'Do Ingestion Cases
         If DCFPath = "ING" Then
             If DCFStd = "68" Then
-                DCF = DirectCast(cDC(1).Item(1).DCF68ing, Double) * SIConv
+                DCF = cDC(1).Item(1).DCF68ing * SIConv
                 GoTo ExitHere
             Else 'DCFStd = 72
-                DCF = DirectCast(cDC(1).Item(1).DCF72ing, Double) * SIConv
+                DCF = cDC(1).Item(1).DCF72ing * SIConv
                 GoTo ExitHere
             End If
         End If
@@ -316,16 +316,16 @@ HandleErrors:
         'Load the DCF's by ICRP
         Select Case DCFStd
             Case "68"
-                S1 = DirectCast(cDC(1).Item(1).DCF68inhS1, Double)
-                S5 = DirectCast(cDC(1).Item(1).DCF68inhS5, Double)
-                M1 = DirectCast(cDC(1).Item(1).DCF68inhM1, Double)
-                M5 = DirectCast(cDC(1).Item(1).DCF68inhM5, Double)
-                F1 = DirectCast(cDC(1).Item(1).DCF68inhF1, Double)
-                F5 = DirectCast(cDC(1).Item(1).DCF68inhF5, Double)
+                S1 = cDC(1).Item(1).DCF68inhS1
+                S5 = cDC(1).Item(1).DCF68inhS5
+                M1 = cDC(1).Item(1).DCF68inhM1
+                M5 = cDC(1).Item(1).DCF68inhM5
+                F1 = cDC(1).Item(1).DCF68inhF1
+                F5 = cDC(1).Item(1).DCF68inhF5
             Case "72"
-                S1 = DirectCast(cDC(1).Item(1).DCF72inhS1, Double)
-                M1 = DirectCast(cDC(1).Item(1).DCF72inhM1, Double)
-                F1 = DirectCast(cDC(1).Item(1).DCF72inhF1, Double)
+                S1 = cDC(1).Item(1).DCF72inhS1
+                M1 = cDC(1).Item(1).DCF72inhM1
+                F1 = cDC(1).Item(1).DCF72inhF1
                 S5 = 0.0#
                 M5 = 0.0#
                 F5 = 0.0#
@@ -451,7 +451,7 @@ HandleErrors:
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
 
         If OptionalSortOrder = 0 Then OptionalSortOrder = 1
 
@@ -478,7 +478,7 @@ HandleErrors:
 
         n = cDC(0).Count
 
-        EnumDecayChain = If(n >= Member, DirectCast(cDC(0).Item(Member).Isotope, String), "Member number exceeds members in decay chain")
+        EnumDecayChain = If(n >= Member, DirectCast(cDC(0).Item(CInt(Member)).Isotope, String), "Member number exceeds members in decay chain")
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC)
@@ -536,6 +536,7 @@ HandleErrors:
         Dim D As Double
         Dim Msg As String
         Dim uSpA As Object
+        Dim uSpAValue As Double
         Dim SIConv As Double = If(SI = 0, 1, 1 / Ci2Bq)
 
         'Create SI conversion factor
@@ -593,7 +594,7 @@ HandleErrors:
         'Sanitize Radionuclide
         uSpA = SpA(Radionuclide)
         If IsNumeric(uSpA) Then
-            uSpA = DirectCast(uSpA, Double)
+            uSpAValue = DirectCast(uSpA, Double)
         Else
             FGE = uSpA 'return SpA() error msg
             Exit Function
@@ -605,7 +606,7 @@ HandleErrors:
             Exit Function
         End If
 
-        FGE = N / D * (Activity / uSpA) * SIConv
+        FGE = N / D * (Activity / uSpAValue) * SIConv
 
         Exit Function
 
@@ -645,7 +646,7 @@ HandleErrors:
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
 
         If TimeUnit = "" Then TimeUnit = "Y" 'Required for ExcelDNA
 
@@ -685,7 +686,7 @@ HandleErrors:
                 GoTo ExitHere
         End Select
 
-        HalfLife = k * Math.Log(2) / DirectCast(cDC(1).Item(1).Lambda, Double)
+        HalfLife = k * Math.Log(2) / cDC(1).Item(1).Lambda
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC) 'clean-up memory
@@ -857,9 +858,9 @@ HandleErrors:
         '*              negative).
 
         'Variables
-        Dim i As Double
-        Dim j As Double
-        Dim n As Double
+        Dim i As Integer
+        Dim j As Integer
+        Dim n As Integer
         Dim Branch As Integer
         Dim numBranches As Integer
         Dim x As Integer
@@ -872,10 +873,11 @@ HandleErrors:
         Dim Lambda As Double
         Dim deltaLambda As Double
         Dim delta As Double
+        Dim radDecayResult As Double
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
 
         'Check for missing defaults (ExcelDNA fix)
         If TimeUnit = "" Then TimeUnit = "S"
@@ -936,7 +938,7 @@ HandleErrors:
         End If
 
         'Calculate N0
-        N0 = A0 / DirectCast(cDC(0).Item(1).Lambda, Double) 'all branches have the same parent
+        N0 = A0 / cDC(0).Item(1).Lambda 'all branches have the same parent
         Nnt = 0
 
         'Loop for each branch (see the Bateman-equation Notes above the
@@ -955,7 +957,7 @@ HandleErrors:
                 cDC(Branch) = Nothing
                 GoTo NextBranch 'skip empty branches
             Else
-                Lambda = DirectCast(cDC(Branch).Item(cDC(Branch).Count).Lambda, Double) 'store lambda for TerminalMember
+                Lambda = cDC(Branch).Item(cDC(Branch).Count).Lambda 'store lambda for TerminalMember
             End If
 
             'Determine number of elements in decay chain
@@ -965,7 +967,7 @@ HandleErrors:
             'Calculate BR
             BR = 1
             For i = 1 To n - 1
-                BR *= DirectCast(cDC(Branch).Item(i).BranchingRatio, Double)
+                BR *= cDC(Branch).Item(i).BranchingRatio
             Next i
 
             'Calculate Nnt
@@ -974,31 +976,33 @@ HandleErrors:
                 a = 1
                 For j = 1 To n
                     If j <> i Then
-                        deltaLambda = DirectCast(cDC(Branch).Item(j).Lambda, Double) - DirectCast(cDC(Branch).Item(i).Lambda, Double)
+                        deltaLambda = cDC(Branch).Item(j).Lambda - cDC(Branch).Item(i).Lambda
                         If deltaLambda = 0 Then 'div by zero trap - not needed with current ProcessDecaySeries data
                             delta = 0.000000000000001
-                            deltaLambda = (DirectCast(cDC(Branch).Item(j).Lambda, Double) * (1 + delta)) - (DirectCast(cDC(Branch).Item(i).Lambda, Double) * (1 - delta))
+                            deltaLambda = (cDC(Branch).Item(j).Lambda * (1 + delta)) - (cDC(Branch).Item(i).Lambda * (1 - delta))
                         End If
-                        a = a * DirectCast(cDC(Branch).Item(j).Lambda, Double) / deltaLambda
+                        a = a * cDC(Branch).Item(j).Lambda / deltaLambda
                     End If
                 Next j
-                b += DirectCast(cDC(Branch).Item(i).Lambda, Double) * a * (Math.E ^ (-DirectCast(cDC(Branch).Item(i).Lambda, Double) * DecayTime))
+                b += cDC(Branch).Item(i).Lambda * a * (Math.E ^ (-cDC(Branch).Item(i).Lambda * DecayTime))
             Next i
 
-            Nnt = (N0 * BR / DirectCast(cDC(Branch).Item(n).Lambda, Double) * b) + Nnt
+            Nnt = (N0 * BR / cDC(Branch).Item(n).Lambda * b) + Nnt
 
 NextBranch:  'used to skip empty branches
 
         Next Branch
 
         'Return Nnt
-        RadDecay = Nnt * Lambda 'convert atoms to activity
-        If RadDecay < 0.0# Then RadDecay = 0.0#
+        radDecayResult = Nnt * Lambda 'convert atoms to activity
+        If radDecayResult < 0.0# Then radDecayResult = 0.0#
+        RadDecay = radDecayResult
         GoTo ExitHere
 
 SimpleDecay:
-        RadDecay = A0 * (Math.E ^ (-DirectCast(cDC(1).Item(1).Lambda, Double) * DecayTime))
-        If RadDecay < 0.0# Then RadDecay = 0.0#
+        radDecayResult = A0 * (Math.E ^ (-cDC(1).Item(1).Lambda * DecayTime))
+        If radDecayResult < 0.0# Then radDecayResult = 0.0#
+        RadDecay = radDecayResult
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC) 'clean-up memory
@@ -1040,7 +1044,7 @@ HandleErrors:
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
         RTZAttribution =
-            "RadToolz version " & RTZVers() & ".  Copyright (c) " & Year(Now) & " " &
+            "RadToolz version " & RTZVers().ToString & ".  Copyright (c) " & Year(Now) & " " &
             "by Backscatter enterprises.  Licensed under an " &
             "MIT License at " &
             "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt" & ".  " &
@@ -1178,7 +1182,7 @@ HandleErrors:
         iSheet.Cells(r, c) = "RTZVers"
         iSheet.Cells(r, c + 1) = "Returns version of RadToolz being used"
 
-        RTZFunctions = "Functions for Radtoolz version " & RTZVers()
+        RTZFunctions = "Functions for Radtoolz version " & RTZVers().ToString
 
         ' Assumption: uRng is read here only through the C API (Excel(xlfReftext, ...))
         ' above, not through a normal parameter read Excel's dependency tracker would
@@ -1218,13 +1222,14 @@ HandleErrors:
         '*              literal, not derived from any workbook/user input.
 
         Dim Msg As Object
+        Dim dialogResult As MsgBoxResult
         Dim license As String = "https://github.com/radtoolz/RadToolz/blob/master/LICENSE.txt"
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
-        Msg = MsgBox("Open browser for RadToolz license?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo, "RadToolz License") & no_input
+        dialogResult = MsgBox("Open browser for RadToolz license?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo, "RadToolz License")
 #Disable Warning IDE0058 ' Expression value is never used
-        If Msg = vbYes Then Process.Start(license)
+        If dialogResult = MsgBoxResult.Yes Then Process.Start(license)
 #Enable Warning IDE0058 ' Expression value is never used
 
         RTZLicense = "RadToolz license may be found at " & license &
@@ -1275,7 +1280,7 @@ HandleErrors:
 
         Rsp = pds.ListAll(uCellAddr)
 
-        RTZParams = If(Rsp, "Radtoolz version " & RTZVers(), "Failed")
+        RTZParams = If(Rsp, "Radtoolz version " & RTZVers().ToString, "Failed")
 
         uRng = uRng 'dummy operation to calm the Excel dependency tree down!
 
@@ -1357,7 +1362,7 @@ HandleErrors:
 
         Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15 & XCOM
 
-        Dim msgBoxResult As Object = MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers())
+        Dim msgBoxResult As Object = MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers().ToString)
 
         RTZRefs = "" & no_input
 
@@ -1412,6 +1417,7 @@ HandleErrors:
         On Error GoTo HandleErrors
 
         Dim Msg As Object
+        Dim dialogResult As MsgBoxResult
         Dim vers As String = "RTZ version Not found."
         Dim versNum As Double
         Dim txt As String
@@ -1435,16 +1441,16 @@ HandleErrors:
 #Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
             Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
-            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+            dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
 
-            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
+            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://www.radtoolz.com/")
             vers = "Current RadToolz version Is " & vers & "."
         ElseIf versNum < RadToolzVersion Then ' Pre-release version
             vers = ("RadToolz Is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
         ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
             Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
-            Msg = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-            If Msg = vbYes Then Process.Start("https://www.radtoolz.com/")
+            dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://www.radtoolz.com/")
             vers = "Current RadToolz version Is " & vers & "."
         Else ' Current release version
             vers = "RadToolz Is up to date." & no_input
@@ -1576,7 +1582,7 @@ HandleErrors:
         Dim pds As New ProcessDecaySeries
         Dim bRsp As Boolean
         Dim Msg As String
-        Dim cDC(0 To maxBranches) As Collection
+        Dim cDC(0 To maxBranches) As DecayChainBranch
         Dim SIConv As Double = If(SI = 0, 1, Ci2Bq * 1000)
 
         Isotope = UCase(Isotope)
@@ -1601,7 +1607,7 @@ HandleErrors:
         Isotope = Right(Isotope, Len(Isotope) - m)
         m = Convert.ToInt32(Val(Isotope))
 
-        SpA = DirectCast(cDC(1).Item(1).Lambda, Double) * 6.0221413E+23 / m / 37000000000.0# * SIConv
+        SpA = cDC(1).Item(1).Lambda * 6.0221413E+23 / m / 37000000000.0# * SIConv
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC)

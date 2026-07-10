@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.vb" />
+    <Compile Include="DecayChainBranch.vb" />
     <Compile Include="DecaySeriesItem.vb" />
     <Compile Include="DecaySeriesRepository.vb" />
     <Compile Include="GlobalSuppressions.vb" />

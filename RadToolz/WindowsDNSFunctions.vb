@@ -97,7 +97,7 @@ Public Module DnsFunctions
         Dim pQueryResults As IntPtr = IntPtr.Zero
         Try
             ' Perform DNS query
-            Dim queryResult As Object = DnsQuery(domain, DNS_TYPE_TEXT, DNS_QUERY_STANDARD, IntPtr.Zero, pQueryResults, IntPtr.Zero)
+            Dim queryResult As Integer = DnsQuery(domain, DNS_TYPE_TEXT, DNS_QUERY_STANDARD, IntPtr.Zero, pQueryResults, IntPtr.Zero)
             If queryResult <> 0 Then
                 Return $"DNS query failed with error code {queryResult}."
             End If
@@ -105,12 +105,12 @@ Public Module DnsFunctions
             ' Process the linked list of TXT records
             Dim currentRecord As IntPtr = pQueryResults
             While currentRecord <> IntPtr.Zero
-                Dim txtRecord As Object = Marshal.PtrToStructure(Of DnsRecordTxt)(currentRecord)
+                Dim txtRecord As DnsRecordTxt = Marshal.PtrToStructure(Of DnsRecordTxt)(currentRecord)
 
                 ' Extract TXT strings from the record
                 Dim i As Integer
                 Dim txtPointer As IntPtr
-                Dim txt As Object
+                Dim txt As String
                 For i = 0 To CInt(txtRecord.stringCount) - 1
                     ' Each native string pointer is IntPtr.Size bytes apart in
                     ' pStringArray; read the i-th pointer, then marshal the
@@ -119,9 +119,7 @@ Public Module DnsFunctions
                     txt = Marshal.PtrToStringUni(txtPointer)
 
                     ' Match the prefix
-#Disable Warning BC42016 ' Implicit conversion
                     If txt.StartsWith(prefix) Then
-#Enable Warning BC42016 ' Implicit conversion
                         Return txt.Substring(prefix.Length).Trim().ToString
                     End If
                 Next
