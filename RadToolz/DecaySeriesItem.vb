@@ -31,6 +31,7 @@ Public Class DecaySeriesItem
     ' absent evidence it causes a problem, and it does not); flagged here so a
     ' future reader does not mistake them for active backing storage.
     Private ReadOnly cA1 As Double
+
     Private ReadOnly cA2 As Double
     Private ReadOnly cBranchingRatio As Double
     Private ReadOnly cDaughter As String
@@ -50,36 +51,53 @@ Public Class DecaySeriesItem
 
     ''' <summary>ANSI/IEEE A1 transport activity limit (TBq) - see AValue().</summary>
     Public Property A1 As Double = cA1
+
     ''' <summary>ANSI/IEEE A2 transport activity limit (TBq) - see AValue().</summary>
     Public Property A2 As Double = cA2
+
     ''' <summary>Fraction of this isotope's decays that proceed to Daughter (1.0 if this is the only decay mode).</summary>
     Public Property BranchingRatio As Double = cBranchingRatio
+
     ''' <summary>Isotope symbol this isotope decays into along this branch, or "END" for a terminal member.</summary>
     Public Property Daughter As String = cDaughter
+
     ''' <summary>ICRP-68 ingestion dose conversion factor (rem/uCi).</summary>
     Public Property DCF68ing As Double = cDCF68ing
+
     ''' <summary>ICRP-68 inhalation DCF, Fast absorption, AMAD 1 micron (rem/uCi).</summary>
     Public Property DCF68inhF1 As Double = cDCF68inhF1
+
     ''' <summary>ICRP-68 inhalation DCF, Fast absorption, AMAD 5 micron (rem/uCi).</summary>
     Public Property DCF68inhF5 As Double = cDCF68inhF5
+
     ''' <summary>ICRP-68 inhalation DCF, Moderate absorption, AMAD 1 micron (rem/uCi).</summary>
     Public Property DCF68inhM1 As Double = cDCF68inhM1
+
     ''' <summary>ICRP-68 inhalation DCF, Moderate absorption, AMAD 5 micron (rem/uCi).</summary>
     Public Property DCF68inhM5 As Double = cDCF68inhM5
+
     ''' <summary>ICRP-68 inhalation DCF, Slow absorption, AMAD 1 micron (rem/uCi).</summary>
     Public Property DCF68inhS1 As Double = cDCF68inhS1
+
     ''' <summary>ICRP-68 inhalation DCF, Slow absorption, AMAD 5 micron (rem/uCi).</summary>
     Public Property DCF68inhS5 As Double = cDCF68inhS5
+
     ''' <summary>ICRP-72 ingestion dose conversion factor (rem/uCi).</summary>
     Public Property DCF72ing As Double = cDCF72ing
+
     ''' <summary>ICRP-72 inhalation DCF, Fast absorption, AMAD 1 micron only (rem/uCi) - ICRP-72 has no AMAD-5 values; see DCF()'s AMAD override for the "72" standard.</summary>
     Public Property DCF72inhF1 As Double = cDCF72inhF1
+
     ''' <summary>ICRP-72 inhalation DCF, Moderate absorption, AMAD 1 micron (rem/uCi).</summary>
     Public Property DCF72inhM1 As Double = cDCF72inhM1
+
     ''' <summary>ICRP-72 inhalation DCF, Slow absorption, AMAD 1 micron (rem/uCi).</summary>
     Public Property DCF72inhS1 As Double = cDCF72inhS1
+
     ''' <summary>Isotope symbol for this record (e.g. "CS-137"). Always upper-case in the loaded table.</summary>
     Public Property Isotope As String = cIsotope
+
     ''' <summary>Decay constant lambda, in inverse seconds (ln(2) / half-life-in-seconds).</summary>
     Public Property Lambda As Double = cLambda
+
 End Class

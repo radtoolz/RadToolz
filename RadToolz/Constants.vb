@@ -12,7 +12,9 @@ Friend Module Constants
     ' displayed version string and compare RadToolzVersion against the DNS TXT
     ' record published at radtoolz.com to detect available updates.
     Public Const RadToolzVersion As Double = 5.0
+
     Public Const RadToolzPreRelease As String = "RC1" 'α ß Γ π Σ σ µ
+
     ' Must exceed the largest number of distinct decay-chain branches
     ' any single starting isotope's full tree can fork into. The full
     ' ENSDF-sourced table (unlike the old 182-isotope table) records
@@ -43,4 +45,3 @@ Friend Module Constants
     Public Const Ci2Bq As Double = 37000000000.0
 
 End Module
-
