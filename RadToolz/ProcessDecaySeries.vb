@@ -869,22 +869,4 @@ HandleError:
 
     'ListAll
 
-    ''' <summary>
-    ''' Converts an Excel cell-reference argument (an ExcelReference/xlref,
-    ''' as accepted by AllowReference:=True parameters) into a live
-    ''' Microsoft.Office.Interop.Excel.Range, via the XLL C API's xlfReftext
-    ''' to get the address text and then a normal COM Range lookup.
-    ''' </summary>
-    ''' <remarks>
-    ''' NOTE: no caller in this solution invokes ReferenceToRange (verified by
-    ''' searching all .vb files) - RTZFunctions/RTZParams/ListAll each
-    ''' resolve their own range reference inline with the same xlfReftext +
-    ''' iExcel.Range() pattern instead of calling this shared helper.
-    ''' Preserved as-is (comment-only pass; not removed).
-    ''' </remarks>
-    Private Shared Function ReferenceToRange(<ExcelArgument(AllowReference:=True)> xlref As Object) As Object
-        Dim strAddress As String = DirectCast(XlCall.Excel(XlCall.xlfReftext, xlref, True), String)
-        ReferenceToRange = ExcelDnaUtil.Application.Range(strAddress)
-    End Function
-
 End Class

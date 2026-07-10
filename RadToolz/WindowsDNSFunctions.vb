@@ -66,7 +66,7 @@ Public Module DnsFunctions
         Public flags As UInteger
         Public dwTtl As UInteger
         Public dwReserved As UInteger
-        Public stringCount As UShort     ' number of strings in pStringArray
+        Public stringCount As UInteger   ' number of strings in pStringArray (native DWORD dwStringCount)
         Public pStringArray As IntPtr    ' -> array of stringCount native Unicode string pointers
     End Structure
 
@@ -122,14 +122,7 @@ Public Module DnsFunctions
 #Disable Warning BC42016 ' Implicit conversion
                     If txt.StartsWith(prefix) Then
 #Enable Warning BC42016 ' Implicit conversion
-                        ' NOTE: this strips a hardcoded "version=".Length characters,
-                        ' not prefix.Length. Correct today only because the sole
-                        ' caller (RTZUpdate) always passes prefix:="version=" - a
-                        ' future caller passing any other prefix would get a
-                        ' mis-truncated result. Pre-existing behavior, left
-                        ' unchanged as out of scope for this pass; flagged here
-                        ' rather than fixed silently.
-                        Return txt.Substring("version=".Length).Trim().ToString
+                        Return txt.Substring(prefix.Length).Trim().ToString
                     End If
                 Next
 

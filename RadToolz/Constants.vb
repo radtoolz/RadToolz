@@ -13,7 +13,7 @@ Friend Module Constants
     ' record published at radtoolz.com to detect available updates.
     Public Const RadToolzVersion As Double = 5.0
 
-    Public Const RadToolzPreRelease As String = "RC1" 'α ß Γ π Σ σ µ
+    Public Const RadToolzPreRelease As String = "RC2" 'α ß Γ π Σ σ µ
 
     ' Must exceed the largest number of distinct decay-chain branches
     ' any single starting isotope's full tree can fork into. The full
@@ -28,7 +28,7 @@ Friend Module Constants
 
     ' Cached handle to the host Excel.Application, resolved once at module load via
     ' ExcelDnaUtil.Application. Used (as Object, i.e. late-bound) wherever code needs
-    ' the COM object model directly - e.g. ProcessDecaySeries.ListAll/ReferenceToRange
+    ' the COM object model directly - e.g. ProcessDecaySeries.ListAll
     ' and RadToolzFunctions.RTZFunctions/RTZParams resolving a user-supplied range
     ' reference. This is the add-in's own in-process Application RCW: per
     ' section_16_com_and_memory_lifetime_rules, it must never be passed to
