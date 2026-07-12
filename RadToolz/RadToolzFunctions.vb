@@ -478,7 +478,9 @@ HandleErrors:
 
         n = cDC(0).Count
 
-        EnumDecayChain = If(n >= Member, DirectCast(cDC(0).Item(CInt(Member)).Isotope, String), "Member number exceeds members in decay chain")
+#Disable Warning IDE0004 ' Explicit narrowing (Double->Integer) required once Option Strict On lands (DDR-0005 Milestone 5); redundant only under current OptionStrict Off.
+        EnumDecayChain = If(n >= Member, cDC(0).Item(CInt(Member)).Isotope, "Member number exceeds members in decay chain")
+#Enable Warning IDE0004
 
 ExitHere:
         bRsp = pds.ClearBranches(cDC)
@@ -953,7 +955,7 @@ HandleErrors:
 
         For Branch = 1 To numBranches 'Branch(0) reserved for consolidated isotope list
             'Determine if branch ends at terminal
-            If DirectCast(cDC(Branch).Item(cDC(Branch).Count).Isotope, String) <> TerminalMember Then
+            If cDC(Branch).Item(cDC(Branch).Count).Isotope <> TerminalMember Then
                 cDC(Branch) = Nothing
                 GoTo NextBranch 'skip empty branches
             Else
@@ -1233,7 +1235,7 @@ HandleErrors:
 #Enable Warning IDE0058 ' Expression value is never used
 
         RTZLicense = "RadToolz license may be found at " & license &
-            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt"
+            ".  Excel-DNA license may be found at https://github.com/Excel-DNA/ExcelDna/blob/master/LICENSE.txt" & no_input
 
         Exit Function
 

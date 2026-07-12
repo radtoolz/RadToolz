@@ -192,7 +192,7 @@ HandleErrors:
                     End If
 
                     'Follow daughter down nextBranch
-                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds, reachCache:=reachCache)
+                    bRsp = GetDecayChain(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds, reachCache:=reachCache)
                     If Not bRsp Then GoTo HandleErrors
                 Next altIndex
             End If
@@ -509,8 +509,8 @@ HandleErrors:
         sParent = UCase(sParent)
         sTerminal = UCase(sTerminal)
 
-        If DirectCast(vdcdci.Item(1).Isotope, String) = sParent And
-        (DirectCast(vdcdci.Item(vdcdci.Count).Isotope, String) = sTerminal Or sTerminal = "END") Then
+        If vdcdci.Item(1).Isotope = sParent And
+        (vdcdci.Item(vdcdci.Count).Isotope = sTerminal Or sTerminal = "END") Then
             VerifyDecayChain = True
         End If
 
