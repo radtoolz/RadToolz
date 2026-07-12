@@ -111,11 +111,18 @@ Public Module DnsFunctions
                 Dim i As Integer
                 Dim txtPointer As IntPtr
                 Dim txt As String
+                ' pStringArray is a flexible array member: its storage starts at
+                ' this field's own offset in the native record, so the marshaled
+                ' txtRecord.pStringArray value is already pStringArray(0) itself,
+                ' not the array's base address. Recompute the real base address
+                ' from the original native record pointer so each i-th pointer is
+                ' read from the array, not from inside the first string's text.
+                Dim stringArrayAddr As IntPtr = IntPtr.Add(currentRecord, Marshal.OffsetOf(GetType(DnsRecordTxt), "pStringArray").ToInt32())
                 For i = 0 To CInt(txtRecord.stringCount) - 1
                     ' Each native string pointer is IntPtr.Size bytes apart in
                     ' pStringArray; read the i-th pointer, then marshal the
                     ' Unicode C string it points to into a managed String.
-                    txtPointer = Marshal.ReadIntPtr(txtRecord.pStringArray, i * IntPtr.Size)
+                    txtPointer = Marshal.ReadIntPtr(stringArrayAddr, i * IntPtr.Size)
                     txt = Marshal.PtrToStringUni(txtPointer)
 
                     ' Match the prefix
@@ -125,7 +132,7 @@ Public Module DnsFunctions
                 Next
 
                 ' Move to the next record
-                currentRecord = CType(txtRecord.pNext, IntPtr)
+                currentRecord = txtRecord.pNext
             End While
 
             ' No matching record found
