@@ -8,7 +8,7 @@ Context
   scanning the actual VB.NET application source for security-vulnerability
   patterns (SQL/command injection, path traversal, weak crypto, insecure
   deserialization, hardcoded secrets, etc.), was deleted from CI on
-  2024-12-30 (5d7b271 "Delete SCS") and never replaced. CodeQL
+  2024-12-30 (3263c99 "Delete SCS") and never replaced. CodeQL
   (codeql.yml, currently on master) does run, but its own header comment
   states it is scoped to the "actions" language only, since CodeQL does not
   support VB.NET - it scans the workflow YAML files themselves, not
