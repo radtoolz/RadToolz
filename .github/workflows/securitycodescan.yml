@@ -35,9 +35,15 @@ jobs:
         run: nuget restore
 
       - name: Build
-        run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false /p:ErrorLog="${{ github.workspace }}\SecurityCodeScan.sarif,version=2.1"
+        run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false /p:ErrorLog="${{ github.workspace }}\SecurityCodeScan.raw.sarif,version=2.1"
+
+      - name: Upgrade SARIF to current schema
+        shell: pwsh
+        run: |
+          dotnet tool install --global Sarif.Multitool --version 5.5.0
+          sarif rewrite "${{ github.workspace }}\SecurityCodeScan.raw.sarif" --output "${{ github.workspace }}\SecurityCodeScan.sarif" --sarif-output-version Current
 
       - name: Upload sarif
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ github.workspace }}\SecurityCodeScan.sarif
