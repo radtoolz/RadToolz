@@ -20,9 +20,6 @@ on:
 jobs:
   SCS:
     runs-on: windows-latest
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v7
       - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
@@ -35,15 +32,18 @@ jobs:
         run: nuget restore
 
       - name: Build
-        run: msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false /p:ErrorLog="${{ github.workspace }}\SecurityCodeScan.raw.sarif,version=2.1"
-
-      - name: Upgrade SARIF to current schema
         shell: pwsh
         run: |
-          dotnet tool install --global Sarif.Multitool --version 5.5.0
-          sarif rewrite "${{ github.workspace }}\SecurityCodeScan.raw.sarif" --output "${{ github.workspace }}\SecurityCodeScan.sarif" --sarif-output-version Current
+          msbuild RadToolz.sln /p:Configuration=Release /p:Platform="Any CPU" /p:Optimize=false /p:DebugType=none /p:DebugSymbols=false | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload sarif
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: ${{ github.workspace }}\SecurityCodeScan.sarif
+      - name: Fail if SecurityCodeScan found anything
+        shell: pwsh
+        run: |
+          $findings = Select-String -Path build.log -Pattern 'warning SCS\d+'
+          if ($findings) {
+            Write-Host "::error::SecurityCodeScan found $($findings.Count) potential issue(s) - see the Build step log for full detail:"
+            $findings | ForEach-Object { Write-Host $_.Line }
+            exit 1
+          }
+          Write-Host "No SecurityCodeScan findings."
