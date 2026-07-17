@@ -86,13 +86,13 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 
 ## DEBT-0010: Add a second static-analysis engine alongside SecurityCodeScan
 
-- **Location:** `RadToolz/RadToolz.vbproj`, `RadToolz/packages.config`, `RadToolz/.editorconfig`.
+- **Location:** `RadToolz/RadToolz.vbproj`, `RadToolz/packages.config`, `RadToolz/.editorconfig`, `.github/workflows/securitycodescan.yml`.
 - **Description:** Split out from DEBT-0009(a). SecurityCodeScan's last upstream release was 2022 — it still works but its rule set won't grow. Consider adding `Microsoft.CodeAnalysis.NetAnalyzers` security rules (CA2xxx/CA3xxx/CA5xxx) or CodeQL as a second, actively-maintained engine.
 - **Risk:** Informational.
 - **Suggested remedy:** Evaluate NetAnalyzers (lower lift — an MSBuild analyzer package) vs. CodeQL (separate workflow/job, broader rule set) and add as a second gate, not a replacement for SecurityCodeScan.
-- **Status:** PHASE 1 CLOSED 2026-07-17 — `Microsoft.CodeAnalysis.NetAnalyzers` 10.0.302 added to `RadToolz.vbproj`/`packages.config`, scoped to suppress the codebase's currently-firing non-security rules (see DDR-0011). Landed report-only (build warnings, not a CI gate). Zero Security-category findings at implementation time. A residual scoping gap was found and recorded as DEBT-0011. Follow-up: a separate task to flip this from report-only to a hard CI gate once proven stable.
+- **Status:** CLOSED 2026-07-17 — Phase 1: `Microsoft.CodeAnalysis.NetAnalyzers` 10.0.302 added to `RadToolz.vbproj`/`packages.config`, scoped to suppress the codebase's currently-firing non-security rules (see DDR-0011); landed report-only first. Phase 2 (gating): `.github/workflows/securitycodescan.yml` now fails the `SCS` job's build on any of the 94 official NetAnalyzers Security-category rule IDs (explicit list, not a numeric range — the category's IDs aren't contiguous), reusing the existing `build.log` rather than a second build. Verified against a synthetic log (catches security findings, ignores non-security noise) and the real codebase (0 findings, gate lands green). Local dev builds remain report-only, matching how SecurityCodeScan itself is only gated in CI. A residual scoping gap (CA1502 vs. the legacy ruleset) was found during phase 1 and recorded separately as DEBT-0011 — not blocking, since CA1502 isn't a security rule.
 - **Date recorded:** 2026-07-17
-- **Date closed:** 2026-07-17 (phase 1 only — gating is a follow-up task)
+- **Date closed:** 2026-07-17
 
 ## DEBT-0011: CA1502 can't be suppressed via .editorconfig while JJPAnalysisRules.ruleset stays wired
 
