@@ -80,9 +80,9 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Description:** The SecurityCodeScan gate is solid (fails build on any `SCS` warning; runs on push/PR to master+dev plus weekly cron), but three refinements were identified: (a) SecurityCodeScan's last upstream release was 2022 — still functional, but its rule set won't grow; consider adding `Microsoft.CodeAnalysis.NetAnalyzers` security rules (CA2xxx/CA3xxx/CA5xxx) or CodeQL as a second engine; (b) `setup-nuget` and `security-code-scan-add-action` are SHA-pinned but `actions/checkout@v7` and `microsoft/setup-msbuild@v3` are pinned by mutable tag — pin all four by SHA; (c) the workflow declares no `permissions:` block, so `GITHUB_TOKEN` gets the repository default — add `permissions: contents: read`.
 - **Risk:** Informational.
 - **Suggested remedy:** See description; three independent, low-effort workflow edits.
-- **Status:** PARTIALLY CLOSED 2026-07-17 — (b) and (c) done: `actions/checkout` and `microsoft/setup-msbuild` are now SHA-pinned (all four actions in the job are SHA-pinned), and a workflow-level `permissions: contents: read` block was added. (a) — a second static-analysis engine — is split out as DEBT-0010 below, since it's a larger addition than a one-line edit.
+- **Status:** CLOSED 2026-07-17 — (b) and (c) done: `actions/checkout` and `microsoft/setup-msbuild` are now SHA-pinned (all four actions in the job are SHA-pinned), and a workflow-level `permissions: contents: read` block was added. (a) — a second static-analysis engine — was split out as DEBT-0010, which is itself now closed (both phases: NetAnalyzers added/scoped, then gated in CI).
 - **Date recorded:** 2026-07-17
-- **Date closed:** 2026-07-17 (partial — see DEBT-0010)
+- **Date closed:** 2026-07-17
 
 ## DEBT-0010: Add a second static-analysis engine alongside SecurityCodeScan
 
