@@ -15,3 +15,23 @@ dotnet_diagnostic.CA1703.severity = none
 dotnet_diagnostic.CA1704.severity = none
 
 dotnet_diagnostic.CA1709.severity = none
+
+# DEBT-0010: Microsoft.CodeAnalysis.NetAnalyzers is scoped to security rules only, so it doesn't add
+# general code-quality noise on top of the existing JJP ruleset above. Report-only for now (build
+# warnings, not a CI gate) - see docs/debt.md DEBT-0010 for the follow-up gating task.
+# NOTE: dotnet_analyzer_diagnostic.category-<Name>.severity bulk overrides did not take effect on the
+# compiler toolchain this project builds with (verified: individual dotnet_diagnostic.<ID>.severity
+# overrides work, category-level ones silently no-op) - each non-security, enabled-by-default rule
+# NetAnalyzers currently raises on this codebase is suppressed individually below instead. This list
+# is not exhaustive against every rule NetAnalyzers could ever enable by default, only the ones
+# observed; a newly-triggered non-security rule would show up as a build warning (report-only, does
+# not fail the build) until added here.
+dotnet_diagnostic.CA1024.severity = none
+dotnet_diagnostic.CA1031.severity = none
+dotnet_diagnostic.CA1045.severity = none
+dotnet_diagnostic.CA1060.severity = none
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1502.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA2263.severity = none

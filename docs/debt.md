@@ -86,8 +86,18 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 
 ## DEBT-0010: Add a second static-analysis engine alongside SecurityCodeScan
 
-- **Location:** `.github/workflows/securitycodescan.yml`.
+- **Location:** `RadToolz/RadToolz.vbproj`, `RadToolz/packages.config`, `RadToolz/.editorconfig`.
 - **Description:** Split out from DEBT-0009(a). SecurityCodeScan's last upstream release was 2022 — it still works but its rule set won't grow. Consider adding `Microsoft.CodeAnalysis.NetAnalyzers` security rules (CA2xxx/CA3xxx/CA5xxx) or CodeQL as a second, actively-maintained engine.
 - **Risk:** Informational.
 - **Suggested remedy:** Evaluate NetAnalyzers (lower lift — an MSBuild analyzer package) vs. CodeQL (separate workflow/job, broader rule set) and add as a second gate, not a replacement for SecurityCodeScan.
+- **Status:** PHASE 1 CLOSED 2026-07-17 — `Microsoft.CodeAnalysis.NetAnalyzers` 10.0.302 added to `RadToolz.vbproj`/`packages.config`, scoped to suppress the codebase's currently-firing non-security rules (see DDR-0011). Landed report-only (build warnings, not a CI gate). Zero Security-category findings at implementation time. A residual scoping gap was found and recorded as DEBT-0011. Follow-up: a separate task to flip this from report-only to a hard CI gate once proven stable.
+- **Date recorded:** 2026-07-17
+- **Date closed:** 2026-07-17 (phase 1 only — gating is a follow-up task)
+
+## DEBT-0011: CA1502 can't be suppressed via .editorconfig while JJPAnalysisRules.ruleset stays wired
+
+- **Location:** `RadToolz/RadToolz.vbproj` (`CodeAnalysisRuleSet`), `JJPAnalysisRules.ruleset`, `RadToolz/.editorconfig`.
+- **Description:** Discovered while scoping DEBT-0010's NetAnalyzers addition to security-only rules. `RadToolz.vbproj`'s `CodeAnalysisRuleSet` property is passed to the VB compiler via `/ruleset:` regardless of `RunCodeAnalysis=false` — a separate mechanism from the legacy FxCop-style analysis pass that flag actually controls. `JJPAnalysisRules.ruleset` explicitly sets `CA1502` (cyclomatic complexity) to `Action="Warning"` under its `Microsoft.Analyzers.ManagedCodeAnalysis` block, and that ruleset-level severity wins over any `.editorconfig` `dotnet_diagnostic.CA1502.severity` override. Also discovered: `dotnet_analyzer_diagnostic.category-<Name>.severity` bulk category overrides silently no-op on this toolchain (individual `dotnet_diagnostic.<ID>.severity` overrides work correctly), which is why DEBT-0010's scoping is done rule-by-rule rather than by category. Net effect: `CA1502` shows up as a build warning on 3 pre-existing, already-known-complex methods (`DCF`, `RadDecay`, `GetDecayChain` — the latter two already flagged in DEBT-0006's neighborhood) and cannot currently be silenced without editing the legacy ruleset file. The same ruleset file also contains an `SecurityCodeScan.VS2019` block (all `SCS0xxx` rules as `Action="Error"`) that DDR-0009 states is "exercised" by the CI SecurityCodeScan workflow — that block is very likely load-bearing for the CI security gate today, given the same `/ruleset:` passthrough behavior confirmed here, so any cleanup of this file must not touch it without separately verifying CI's actual behavior.
+- **Risk:** Informational (build noise only; does not fail the build; not a security finding).
+- **Suggested remedy:** Strip just the `Microsoft.Analyzers.ManagedCodeAnalysis` block from `JJPAnalysisRules.ruleset` (leaving the `SecurityCodeScan.VS2019` block untouched), after first verifying in CI (not just inferring) whether that SCS block is actually load-bearing there. Treat as its own task with its own DDR, since it touches CI-security-relevant config.
 - **Date recorded:** 2026-07-17
