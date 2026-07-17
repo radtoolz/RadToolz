@@ -140,6 +140,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="ProcessDecaySeries.vb" />
+    <Compile Include="RadToolzAddIn.vb" />
     <Compile Include="RadToolzFunctions.vb" />
     <Compile Include="WindowsDNSFunctions.vb" />
   </ItemGroup>

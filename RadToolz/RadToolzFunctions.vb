@@ -1407,89 +1407,104 @@ HandleErrors:
         '* Returns:     Update status
         '* Author:      Backscatter enterprises
         '* Date:        1/25/2025
-        '* Notes:       versNum is compared against the two compile-time
-        '*              constants RadToolzVersion/RadToolzPreRelease
-        '*              (Constants.vb) rather than a simple equality check,
-        '*              to distinguish four states: a newer version is
-        '*              published (offer to update); the published version
-        '*              is numerically behind this build's own
-        '*              RadToolzVersion (this build is itself a pre-release
-        '*              of a not-yet-published version); the published
-        '*              version number matches this build's but this build
-        '*              still carries a pre-release marker (the full
-        '*              release of the current version number has now
-        '*              shipped - offer to update to it); or an exact,
-        '*              fully-released match (up to date). On Error GoTo in
-        '*              VB.NET (unlike VB6) also intercepts unhandled CLR
-        '*              exceptions, mapping common ones to a legacy
-        '*              Err.Number - the "Case 5" special case in
-        '*              HandleErrors below is written for that mapped
-        '*              value (Assumption: not independently re-verified
-        '*              against every failure mode GetTxtRecord/
-        '*              Double.TryParse could raise - GetTxtRecord itself
-        '*              already catches its own exceptions and returns a
-        '*              descriptive string rather than throwing, so in
-        '*              practice this path is only reached for something
-        '*              outside GetTxtRecord's own Try/Catch).
+        '* Notes:       DDR-0016: converted to an Excel-DNA async function
+        '*              (ExcelAsyncUtil.Run) so recalculating this cell -
+        '*              including a forced recalculation on workbook open
+        '*              (RadToolzAddIn.vb) - never blocks Excel's main
+        '*              thread on the DNS lookup. The actual work lives in
+        '*              ComputeRtzUpdateStatus below, which runs on a
+        '*              background thread; its MsgBox/Process.Start calls
+        '*              are marshaled back to the main thread via
+        '*              QueueAsMacro. Message text and manual-invocation
+        '*              behavior are unchanged from before this
+        '*              conversion - only the threading mechanism and
+        '*              error-handling style (structured Try/Catch, since
+        '*              On Error GoTo is not supported inside a lambda)
+        '*              changed.
+        '*              NOT IsVolatile: tried and reverted (DDR-0016).
+        '*              Volatile + ExcelAsyncUtil.Run is a documented,
+        '*              known-broken combination (Excel-DNA's own project
+        '*              discussion group: completing the async call updates
+        '*              the cell, which - because the function is volatile -
+        '*              triggers another recalculation, which calls the
+        '*              function again, indefinitely). Because this
+        '*              function is not volatile, F9/CalculateFull will not
+        '*              refresh it if its declared input (no_input) hasn't
+        '*              changed - by design, per user direction, rather
+        '*              than risk the recalculation loop. The on-open path
+        '*              (RadToolzAddIn.vb) forces a genuine refresh instead
+        '*              via the formula-reassignment trick (cell.Formula =
+        '*              cell.Formula), which mimics F2+Enter without
+        '*              needing volatility.
 
-        On Error GoTo HandleErrors
+        Return ExcelAsyncUtil.Run("RTZUpdate", New Object() {no_input},
+            Function() As Object
+                Return ComputeRtzUpdateStatus(no_input)
+            End Function)
+    End Function
 
-        Dim Msg As Object
-        Dim dialogResult As MsgBoxResult
-        Dim vers As String = "RTZ version Not found."
-        Dim versNum As Double
-        Dim txt As String
-        Dim result As Object
-        Dim TxtRecord As Object
-        Dim found As Boolean = False
+    ' DDR-0016. Runs on a background thread managed by ExcelAsyncUtil - safe to
+    ' block here on GetTxtRecord's DNS I/O (it touches no Excel COM object), but
+    ' MsgBox/Process.Start must not run here directly; they are queued back to
+    ' the main thread below. versNum is compared against the two compile-time
+    ' constants RadToolzVersion/RadToolzPreRelease (Constants.vb) to distinguish
+    ' four states: a newer version is published (offer to update); the
+    ' published version is numerically behind this build's own RadToolzVersion
+    ' (this build is itself a pre-release of a not-yet-published version); the
+    ' published version number matches this build's but this build still
+    ' carries a pre-release marker (the full release of the current version
+    ' number has now shipped - offer to update to it); or an exact,
+    ' fully-released match (up to date).
+    Private Function ComputeRtzUpdateStatus(no_input As String) As String
+        Try
+            Dim localNoInput As String = no_input
+            If Not String.IsNullOrEmpty(localNoInput) Then localNoInput = ""
 
-        If Not String.IsNullOrEmpty(no_input) Then no_input = ""
+            Dim vers As String = GetTxtRecord("radtoolz.com", "version=")
+            Dim versNum As Double
 
-        'Get version from DNS TXT record
-        vers = GetTxtRecord("radtoolz.com", "version=")
+            If Not Double.TryParse(vers, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, versNum) Then
+                Return "Unable to retrieve version information."
+            End If
 
-        If Not Double.TryParse(vers, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, versNum) Then
-            RTZUpdate = "Unable to retrieve version information."
-            GoTo exithere
-        End If
+            Dim resultText As String
+            Dim promptMessage As String = Nothing
 
-#Disable Warning IDE0058 ' Expression value is never used
-        If versNum > RadToolzVersion Then ' Need an update
-            Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
-            dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+            If versNum > RadToolzVersion Then ' Need an update
+                promptMessage = ("RadToolz Is now at version " & vers & ".  You should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
+                resultText = "Newer RadToolz version " & vers & " Is available.  You have version " & RTZVers().ToString & " installed."
+            ElseIf versNum < RadToolzVersion Then ' Pre-release version
+                resultText = ("RadToolz Is now at version " & vers & ".  You have pre-release version ") & RTZVers().ToString
+            ElseIf versNum = RadToolzVersion AndAlso RadToolzPreRelease <> "" Then ' Pre-release of current version
+                promptMessage = ("RadToolz " & vers & " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
+                resultText = "RadToolz version " & vers & " has been released.  You have version " & RTZVers().ToString & " installed."
+            Else ' Current release version
+                resultText = "RadToolz Is up to date." & localNoInput
+            End If
 
-            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://github.com/radtoolz/RadToolz/releases/latest")
-            vers = "Current RadToolz version Is " & vers & "."
-        ElseIf versNum < RadToolzVersion Then ' Pre-release version
-            vers = ("RadToolz Is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
-        ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
-            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
-            dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://github.com/radtoolz/RadToolz/releases/latest")
-            vers = "Current RadToolz version Is " & vers & "."
-        Else ' Current release version
-            vers = "RadToolz Is up to date." & no_input
-        End If
-#Enable Warning IDE0058 ' Expression value is never used
+            ' DDR-0016: skip this dialog if RadToolzAddIn's on-open check already
+            ' showed its own (close-workbook-capable) dialog for this same update -
+            ' this evaluation was triggered by that check's formula-reassignment
+            ' refresh, not by the user. Consumes the flag so only the one triggered
+            ' evaluation is suppressed; any later manual invocation shows its dialog
+            ' normally.
+            If promptMessage IsNot Nothing AndAlso Not RadToolzAddIn.ConsumeDialogSuppression() Then
+                ExcelAsyncUtil.QueueAsMacro(
+                    Sub()
+                        Dim dialogResult As MsgBoxResult = MsgBox(promptMessage, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
+                        If dialogResult = MsgBoxResult.Yes Then Process.Start("https://github.com/radtoolz/RadToolz/releases/latest")
+                    End Sub)
+            End If
 
-        RTZUpdate = vers
-
-exithere:
-        Exit Function
-
-HandleErrors:
-        Select Case Err.Number
-            Case 0
-                RTZUpdate = vers
-            Case 5
-                RTZUpdate = "Unable to connect to DNS server. Try again later."
-            Case Else
-                Msg = "Error # " & Str(Err.Number) & " was generated by " _
-                    & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
-                Dim msgBoxResult As Object = MsgBox(Msg, MsgBoxStyle.Critical, "Error")
-                RTZUpdate = ExcelError.ExcelErrorName.ToString
-        End Select
-
+            Return resultText
+        Catch ex As Exception
+            ' Boundary: GetTxtRecord already catches its own exceptions and
+            ' returns a descriptive string rather than throwing, so in practice
+            ' this is only reached for something outside its own Try/Catch
+            ' (Assumption: not independently re-verified against every failure
+            ' mode Double.TryParse/RTZVers could raise).
+            Return "Unable to check for updates: " & ex.Message
+        End Try
     End Function
 
     'SigFig
