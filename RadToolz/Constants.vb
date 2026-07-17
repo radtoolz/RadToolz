@@ -13,7 +13,7 @@ Friend Module Constants
     ' record published at radtoolz.com to detect available updates.
     Public Const RadToolzVersion As Double = 5.0
 
-    Public Const RadToolzPreRelease As String = "RC2" 'α ß Γ π Σ σ µ
+    Public Const RadToolzPreRelease As String = "RC3" 'α ß Γ π Σ σ µ
 
     ' Must exceed the largest number of distinct decay-chain branches
     ' any single starting isotope's full tree can fork into. The full
