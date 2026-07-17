@@ -102,11 +102,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <!-- DEBT-0010: Microsoft.CodeAnalysis.NetAnalyzers (packages.config projects don't auto-wire analyzers; wired explicitly here, matching what the package's install.ps1 would add). -->
-    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.10.0.302\analyzers\dotnet\Microsoft.CodeAnalysis.NetAnalyzers.dll" />
-    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.10.0.302\analyzers\dotnet\vb\Microsoft.CodeAnalysis.VisualBasic.NetAnalyzers.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
     <Import Include="System" />
     <Import Include="System.Collections" />
