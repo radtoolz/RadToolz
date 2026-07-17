@@ -406,6 +406,22 @@ HandleErrors:
         r = Convert.ToInt32(iRng.Row)
         c = Convert.ToInt32(iRng.Column)
 
+        pds = DecaySeriesRepository.GetAllList()
+
+        ' DEBT-0004: guard against silently overwriting a populated target range.
+        Dim rowCount As Integer = 1 + pds.Count ' header row + one row per isotope
+        Const colCount As Integer = 17
+        Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
+        If iExcel.WorksheetFunction.CountA(targetRange) > 0 Then
+            Dim confirmResult As MsgBoxResult = MsgBox(
+                "The output range starting at " & targetRange.Address & " already contains data that will be overwritten. Continue?",
+                MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo, "RTZParams")
+            If confirmResult <> MsgBoxResult.Yes Then
+                ListAll = False
+                Exit Function
+            End If
+        End If
+
         'Write Headers
         iSheet.Cells(r, c) = "Isotope"
         iSheet.Cells(r, c + 1) = "Lambda (/s)"
@@ -425,8 +441,6 @@ HandleErrors:
         iSheet.Cells(r, c + 15) = "Daughter"
         iSheet.Cells(r, c + 16) = "BR"
         r += 1 'increment to the next row
-
-        pds = DecaySeriesRepository.GetAllList()
 
         For x = 1 To pds.Count
             Dim item As DecaySeriesItem = pds(CInt(x) - 1)

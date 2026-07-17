@@ -1127,6 +1127,22 @@ HandleErrors:
         r = Convert.ToInt32(iRng.Row)
         c = Convert.ToInt32(iRng.Column)
 
+        ' DEBT-0004: guard against silently overwriting a populated target range.
+        ' rowCount must stay in sync with the number of entries written below (18
+        ' rows: 11 nuclear functions + 7 RadToolz info functions).
+        Const rowCount As Integer = 18
+        Const colCount As Integer = 2
+        Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
+        If iExcel.WorksheetFunction.CountA(targetRange) > 0 Then
+            Dim confirmResult As MsgBoxResult = MsgBox(
+                "The output range starting at " & targetRange.Address & " already contains data that will be overwritten. Continue?",
+                MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo, "RTZFunctions")
+            If confirmResult <> MsgBoxResult.Yes Then
+                RTZFunctions = ExcelError.ExcelErrorValue
+                Exit Function
+            End If
+        End If
+
         'Write Nuclear Functions 'r++ after each description
         iSheet.Cells(r, c) = "ANSIRound"
         iSheet.Cells(r, c + 1) = "Round a value in accordance with ANSI standard"
