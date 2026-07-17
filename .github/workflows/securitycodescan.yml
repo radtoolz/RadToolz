@@ -34,6 +34,43 @@ jobs:
       - name: Restore dependencies
         run: nuget restore
 
+      - name: Work around security-code-scan-add-action's missing YamlDotNet analyzer wiring
+        shell: pwsh
+        run: |
+          # DDR-0012. security-code-scan-add-action wires only SecurityCodeScan.VS2019.dll as an
+          # <Analyzer> for packages.config-style projects, not its YamlDotNet.dll dependency - every
+          # SCS analyzer type-initializes against YamlDotNet and throws FileNotFoundException before
+          # it can run, so SCS has been scanning nothing. Confirmed both locally and against this
+          # repo's own CI logs. Discovers whatever version nuget restore actually pulled (the action
+          # always installs "latest", not a pinned version) rather than hardcoding one.
+          $scsDir = Get-ChildItem -Path packages -Directory -Filter "SecurityCodeScan.VS2019.*" | Select-Object -First 1
+          if (-not $scsDir) {
+            Write-Host "::error::SecurityCodeScan.VS2019 package directory not found under packages/ - cannot patch analyzer wiring."
+            exit 1
+          }
+          $yamlDotNetPath = Join-Path $scsDir.FullName "analyzers\dotnet\YamlDotNet.dll"
+          if (-not (Test-Path $yamlDotNetPath)) {
+            Write-Host "::error::Expected $yamlDotNetPath to exist but it does not - SecurityCodeScan package layout may have changed."
+            exit 1
+          }
+
+          $projectPath = "RadToolz\RadToolz.vbproj"
+          $xml = [xml](Get-Content -Path $projectPath)
+          $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+          $ns.AddNamespace("x", "http://schemas.microsoft.com/developer/msbuild/2003")
+
+          $analyzerNode = $xml.CreateElement("Analyzer", $xml.Project.NamespaceURI)
+          $includeAttr = $xml.CreateAttribute("Include")
+          $includeAttr.Value = "..\packages\$($scsDir.Name)\analyzers\dotnet\YamlDotNet.dll"
+          $analyzerNode.Attributes.Append($includeAttr) | Out-Null
+
+          $itemGroupNode = $xml.CreateElement("ItemGroup", $xml.Project.NamespaceURI)
+          $itemGroupNode.AppendChild($analyzerNode) | Out-Null
+          $xml.SelectSingleNode("//x:Project", $ns).AppendChild($itemGroupNode) | Out-Null
+          $xml.Save($projectPath)
+
+          Write-Host "Added missing analyzer reference: $($includeAttr.Value)"
+
       - name: Build
         shell: pwsh
         run: |
