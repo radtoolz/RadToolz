@@ -26,7 +26,9 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Description:** `Double.TryParse(vers, versNum)` uses the machine's current culture. On comma-decimal locales (German, French, most of Europe and South America), `"5.1"` from the TXT record parses as `51` — the period reads as a thousands separator — producing a false "RadToolz is now at version 5.1. You should update." dialog whenever the published version has a decimal. The redundant `Convert.ToDouble(vers)` at line 1441 (TryParse already populated `versNum`) inherits the same culture behavior. The display side already handles this correctly — `RTZVers` formats with `CultureInfo.InvariantCulture` — so the parse side is the one gap.
 - **Risk:** Low (real user-facing misbehavior today, not a security issue).
 - **Suggested remedy:** `Double.TryParse(vers, NumberStyles.Float, CultureInfo.InvariantCulture, versNum)`; delete line 1441.
+- **Status:** CLOSED 2026-07-17 — `Double.TryParse` now takes `Globalization.NumberStyles.Float`/`Globalization.CultureInfo.InvariantCulture` explicitly; the redundant `Convert.ToDouble` line removed. Commit `8341d5f`.
 - **Date recorded:** 2026-07-17
+- **Date closed:** 2026-07-17
 
 ## DEBT-0004: Sheet-writing functions can destroy data; self-overwrite guard covers only the anchor cell
 
@@ -50,7 +52,9 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Description:** The empty-slot scan (`For y = currBranch + 1 To maxBranches`) has no failure path. If a future dataset forks a chain into more than `maxBranches` (150) branches, the loop completes without finding a slot, `nextBranch` silently retains its previous value, and the fork is appended onto an already-occupied branch, producing wrong decay-chain output with no error. Not attacker-reachable today (the database is embedded and curated; the widest known fork is U-238's ~70 branches, per the constant's own comment). **Note:** "silently corrupts results" touches the handbook's stop-and-ask criterion for data-corruption potential (`section_29_stop_and_ask`) — flagging for prioritization; for a radiological calculation tool, a loud failure costs nothing here.
 - **Risk:** Low today given the curated dataset, but the failure mode is silently-wrong output rather than a crash.
 - **Suggested remedy:** After the scan, if no empty slot was found, return an error via the existing `HandleErrors` path instead of proceeding; optionally assert `gdcdci(nextBranch).Count = 0` before the copy.
+- **Status:** CLOSED 2026-07-17 — added a `foundSlot` guard that jumps to the existing `HandleErrors` path (returns `False`) when the empty-slot scan comes up empty, instead of silently reusing a stale `nextBranch`. Build verified clean; Excel-side characterization check (U-238/Bi-214 output unchanged) still pending user confirmation. Commit `6b65245`.
 - **Date recorded:** 2026-07-17
+- **Date closed:** 2026-07-17
 
 ## DEBT-0007: Synchronous DNS query and modal dialogs run on the calculation thread
 
@@ -66,7 +70,9 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Description:** Struct layout, flexible-array-member handling, and `DnsRecordListFree` cleanup were all verified correct (matches DDR-0007). Two nits remain: `Marshal.PtrToStringUni` can return `Nothing`, and the following line would throw a `NullReferenceException` (currently swallowed by a broad `Catch` — functional, but silent); and `txt.StartsWith(prefix)` is culture-sensitive.
 - **Risk:** Informational.
 - **Suggested remedy:** Add an explicit null check after `PtrToStringUni`; use `txt.StartsWith(prefix, StringComparison.Ordinal)`.
+- **Status:** CLOSED 2026-07-17 — added an `IsNot Nothing` check before `StartsWith`, which now also passes `StringComparison.Ordinal`. Commit `c89241a`.
 - **Date recorded:** 2026-07-17
+- **Date closed:** 2026-07-17
 
 ## DEBT-0009: CI / supply-chain hardening refinements
 
