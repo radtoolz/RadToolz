@@ -40,8 +40,6 @@ Public Module MyFunctions
         '* Input:       num - the number to return to the desired precision
         '*              digits - the number of decimal places to represent
         '* Returns:     The number to the requested number of digits
-        '* Author:      Backscatter enterprises
-        '* Date:        10/31/2015
         '* Notes:       Math.Round(Decimal, Integer) without an explicit
         '*              MidpointRounding argument defaults to
         '*              MidpointRounding.ToEven ("banker's rounding") for
@@ -71,8 +69,6 @@ Public Module MyFunctions
         '*              A1 or A2 (e.g. A1 or A2)
         '*              optional Unit (e.g., Ci or TBq)
         '* Returns:     either A1 or A2 value
-        '* Author:      Backscatter enterprises
-        '* Date:        1/5/2025
         '* Notes:       A1/A2 values are stored in the database in TBq
         '*              (see DecaySeriesItem.A1/A2); AConv converts to Ci
         '*              when Unit:="CI" (1 TBq = 1e12 Bq, divided by
@@ -199,8 +195,6 @@ HandleErrors:
         '*              AMAD (e.g. 1 or 5), defaults to maximum value
         '*              optional SI, defaults to 0 - English units
         '* Returns:     either inhalation or ingestion dose conversion factor (rem/uCi) or (Sv/Bq)
-        '* Author:      Backscatter enterprises
-        '* Date:        1/1/2025
         '* Notes:       DCFAMAD:="9" is a sentinel for "unspecified/take the
         '*              maximum," not a real AMAD (aerosol median diameter)
         '*              value - only "1" and "5" (microns) are real ICRP-68
@@ -432,8 +426,6 @@ HandleErrors:
         '* Input:       StartingMember - first member of serial decay chain (e.g., U-238)
         '*              Member - number of member in chain
         '* Returns:     Decay chain member value
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
         '* Notes:       Passes sTerminal:="END" to GetDecayChain, the
         '*              sentinel meaning "build and keep every branch" (see
         '*              GetDecayChain's own Notes) - this is the one UDF
@@ -514,8 +506,6 @@ HandleErrors:
         '*              Activity of radionuclide
         '*              optional Basis, basis of equivalence
         '* Returns:     FGE in grams
-        '* Author:      Backscatter enterprises
-        '* Date:        1/1/2025
         '* Notes:       N (450 g for Pu-239 basis, 700 g for U-235 basis)
         '*              and D (each listed radionuclide's own minimum
         '*              critical mass in grams) come from ANSI/ANS-8.1 and
@@ -634,8 +624,6 @@ HandleErrors:
         '* Input:       Isotope (e.g., Cs-137)
         '*              TimeUnit either S, M, D, Y
         '* Returns:     Half-life in time unit
-        '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
         '* Notes:       k accumulates a divide-by-N conversion factor from
         '*              seconds into the requested TimeUnit (e.g. /60 for
         '*              minutes, /60/60/24/365.25 for years - a Julian/
@@ -726,8 +714,6 @@ HandleErrors:
         '*              optional Absorption Type (e.g. S, M, F), defaults to maximum value
         '*              AMAD (e.g. 1 or 5), defaults to maximum value
         '* Returns:     PE-Ci of Isotope
-        '* Author:      Backscatter enterprises
-        '* Date:        9/23/2017
         '* Notes:       Plutonium equivalent curies expresses any
         '*              radionuclide's inhalation hazard in terms of "how
         '*              many curies of Pu-239 would pose the same dose,"
@@ -810,8 +796,6 @@ HandleErrors:
         '*              DecayTime - time of decay in units of TimeUnit, default is seconds
         '*              TimeUnit - Seconds, Minutes, Hours, Days, or Years, default is seconds
         '* Returns:     Activity of TerminalMember after DecayTime, assuming 0 initial activity
-        '* Author:      Backscatter enterprises
-        '* Date:        12/24/2025
         '* Notes:       Implements the general Bateman equation for a serial
         '*              decay chain (parent with 0 initial daughter
         '*              activity in-growing into TerminalMember over time).
@@ -1030,8 +1014,6 @@ HandleErrors:
         '* Usage:       Displays RadToolz Attribution
         '* Input:       None
         '* Returns:     Attribution text
-        '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
         '* Notes:       no_input exists only so this UDF has at least one
         '*              (optional, unused) argument - see the shared
         '*              no_input pattern on RTZLicense/RTZRefs/RTZUpdate/
@@ -1075,8 +1057,6 @@ HandleErrors:
         '* Usage:       Lists all functions from RadToolz
         '* Input:       uRngVal - cell address to begin data dump
         '* Returns:     Title including version
-        '* Author:      Backscatter enterprises
-        '* Date:        1/1/2025
         '* Notes:       IsMacroType:=True (see the ExcelFunction attribute
         '*              above) is required here because this function
         '*              writes to worksheet cells directly via the COM
@@ -1231,8 +1211,6 @@ HandleErrors:
         '* Usage:       Opens Browser to RadToolzLicense
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      Backscatter enterprises
-        '* Date:        12/24/2024
         '* Notes:       Process.Start(license) launches the OS-default
         '*              handler for the URL (normally the default browser),
         '*              only after the user opts in via the MsgBox prompt -
@@ -1274,8 +1252,6 @@ HandleErrors:
         '* Usage:       Lists all values from RadToolz
         '* Input:       uRng - cell address to begin data dump
         '* Returns:     Title including version
-        '* Author:      Backscatter enterprises
-        '* Date:        8/14/2015
         '* Notes:       Same self-reference guard and IsMacroType:=True
         '*              rationale as RTZFunctions above - this also writes
         '*              directly to the worksheet via COM (through
@@ -1320,8 +1296,6 @@ HandleErrors:
         '* Usage:       Reports back the version number of the RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      Backscatter enterprises
-        '* Date:        3/28/2025
         '* Notes:       Static bibliography text only - the citations below
         '*              back the data/algorithms actually implemented
         '*              elsewhere (ENSDF -> DecaySeriesRepository's isotope
@@ -1405,8 +1379,6 @@ HandleErrors:
         '* Usage:       Checks DNS TXT record for RadToolz update
         '* Input:       None
         '* Returns:     Update status
-        '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
         '* Notes:       DDR-0016: converted to an Excel-DNA async function
         '*              (ExcelAsyncUtil.Run) so recalculating this cell -
         '*              including a forced recalculation on workbook open
@@ -1516,8 +1488,6 @@ HandleErrors:
         '* Usage:       Reports back the version number of  RadToolz
         '* Input:       None
         '* Returns:     Version number, from public constant
-        '* Author:      Backscatter enterprises
-        '* Date:        1/25/2025
         '* Notes:       Formats with InvariantCulture rather than the
         '*              current thread culture, so the version string
         '*              (embedded in workbook text, RTZAttribution, and
@@ -1553,8 +1523,6 @@ HandleErrors:
         '* Input:       num - the number to return to the desired accuracy
         '*              sf - number of significant figures as integer
         '* Returns:     The number to the requested number of significant figures
-        '* Author:      Backscatter enterprises
-        '* Date:        10/31/2015
         '* Notes:       Unlike ANSIRound (fixed decimal places), this rounds
         '*              to a fixed count of significant digits regardless of
         '*              magnitude. d = ceiling(log10(|num|)) is the number's
@@ -1588,8 +1556,6 @@ HandleErrors:
         '* Usage:       Calculate Specific Activity for Isotope
         '* Input:       Isotope (e.g., Cs-137)
         '* Returns:     Specific Activity in Ci/g or Bq/kg
-        '* Author:      Backscatter enterprises
-        '* Date:        1/1/2025
         '* Notes:       Specific activity (activity per unit mass) =
         '*              lambda * Avogadro's number / atomic mass / (Bq per
         '*              Ci), scaled by SIConv for Bq/kg output. The mass
@@ -1678,8 +1644,6 @@ HandleErrors:
         '* Usage:       Calculate Chi over Q value
         '* Input:       x, y, z, h, L, SC, and u as specified above
         '* Returns:     Dilution factor s/m3
-        '* Author:      Backscatter enterprises
-        '* Date:        1/1/2025
         '* Notes:       Standard Gaussian plume atmospheric dispersion model
         '*              with multiple ground/mixing-layer-height image
         '*              reflections (the GENII methodology cited in
@@ -1906,8 +1870,6 @@ HandleErrors:
         '* Usage:       Calculates the mass attenuation coefficient
         '* Input:       Type of shield, gamma energy
         '* Returns:     Mass attenuation coefficient in cm^2/g
-        '* Author:      Backscatter enterprises
-        '* Date:        3/28/2025
         '* Notes:       Not tested for use outside beta community.
         '*              a0..a3/b1..b3 are empirical curve-fit coefficients
         '*              (least-squares fit against tabulated XCOM
@@ -2029,8 +1991,6 @@ HandleErrors:
         '* Usage:       Formats a result with uncertainty in the form "r ± uE±nn"
         '* Input:       Analytical result (r) and uncertainty (u)
         '* Returns:     Returns a string formatted as "r ± u" or "< r" if r < u
-        '* Author:      Backscatter enterprises
-        '* Date:        6/6/2025
         '* Notes:       Originally needed by Misa Y.  Name suggestion Bill F.
         '* Notes (2):   Common laboratory-analytical-result convention:
         '*              result and uncertainty are rendered sharing one

@@ -22,8 +22,6 @@ Public Module DecaySeriesRepository
     '*              GetAll() in place - every consumer copies fields out
     '*              before changing anything - so this is safe as long as
     '*              that convention holds going forward.
-    '* Author:      Backscatter enterprises
-    '* Date:        7/3/2026
 
     Private Const ResourceSuffix As String = "DecaySeriesData.json"
 
@@ -104,8 +102,6 @@ Public Module DecaySeriesRepository
     Private Function BuildIndex() As Dictionary(Of String, List(Of Integer))
         '* Usage:       Builds the isotope-symbol -> position(s) index used
         '*              by IndicesOf(), once, from the already-cached data.
-        '* Author:      Backscatter enterprises
-        '* Date:        7/5/2026
 
         Dim map As New Dictionary(Of String, List(Of Integer))(StringComparer.OrdinalIgnoreCase)
         Dim items As List(Of DecaySeriesItem) = _cache.Value
@@ -133,8 +129,6 @@ Public Module DecaySeriesRepository
         '*              silently empty database is worse than a loud
         '*              failure here, since every RadToolz function
         '*              depends on this data.
-        '* Author:      Backscatter enterprises
-        '* Date:        7/3/2026
 
         Dim Msg As String
 

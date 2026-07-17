@@ -10,8 +10,6 @@
 ''' "treat as read-only" contract documented on DecaySeriesRepository.GetAll.
 ''' </summary>
 Public Class DecaySeriesItem
-    '* Author:      Backscatter enterprises
-    '* Date:        10/23/2018
 
     ' NOTE ON THE FIELDS BELOW: these private ReadOnly backing fields are never
     ' assigned anywhere (no constructor sets them), so each is permanently its

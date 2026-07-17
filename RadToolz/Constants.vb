@@ -5,9 +5,6 @@
 ' not part of the exported UDF surface.
 Friend Module Constants
 
-    '* Author:      Backscatter enterprises
-    '* Date:        7/8/2026
-
     ' RTZVers()/RTZUpdate() (RadToolzFunctions.vb) combine these two into the
     ' displayed version string and compare RadToolzVersion against the DNS TXT
     ' record published at radtoolz.com to detect available updates.

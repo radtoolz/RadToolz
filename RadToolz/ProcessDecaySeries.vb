@@ -44,8 +44,6 @@ Public Class ProcessDecaySeries
         '* Input:       gdcdci() - array of DecayChainBranch object
         '*              Branches - number of collections to clear in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
 
         Dim x As Integer
         Dim Msg As String
@@ -92,8 +90,6 @@ HandleErrors:
         '*              currBranch = which member of the gdcdci() is being loaded
         '*              nextBranch = which member is next to be loaded
         '* Returns:     Nothing, but gdcdci() is fully loaded and ready for use
-        '* Author:      Backscatter enterprises
-        '* Date:        8/25/2023
         '* Notes:       sParent = "ALL" is a special case (used by RTZParams/
         '*              ListAll's data dump) that bypasses the chain-walk
         '*              entirely and dumps the full table into gdcdci(0).
@@ -301,8 +297,6 @@ HandleErrors:
         '* Input:       Nothing
         '* Returns:     Collection of DecaySeriesItem for every isotope
         '*              in the database, in the original table order
-        '* Author:      Backscatter enterprises
-        '* Date:        12/24/2024
         '* Updated:     7/3/2026 - data moved out of hardcoded object
         '*              initializers and into the embedded
         '*              DecaySeriesData.json resource, loaded once and
@@ -330,8 +324,6 @@ HandleErrors:
         '* Input:       gdcdci() - array of DecayChainBranch object
         '*              Branches - number of branches to initialize in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
 
         Dim x As Integer
         Dim Msg As String
@@ -365,8 +357,6 @@ HandleErrors:
         '* Usage:       Lists entire database starting at uRng
         '* Input:       uRng = Cell address
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        10/29/2016
         '* Notes:       uRngVal arrives as an already-fully-qualified Excel
         '*              reference string (e.g. "[Book1.xlsx]Sheet1!$A$1"),
         '*              produced by RTZParams via xlfReftext before calling
@@ -502,8 +492,6 @@ HandleErrors:
         '*              sTerminal = last member isotope
         '*              vdcdci = DecayChainBranch of DecaySeriesItems
         '* Returns:     True if sParent is first and sTerminal is last OR sTerminal is END
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
         '* Notes:       Called once per built branch, after GetDecayChain's
         '*              recursion completes, to decide which branches
         '*              survive (see the "Kill branches that do not
@@ -558,8 +546,6 @@ HandleErrors:
         '* Usage:       Verifies isotope is in Class
         '* Input:       uIsotope (e.g., CS-137)
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        7/31/2015
         '* Updated:     7/5/2026 - O(1) index lookup instead of an O(n)
         '*              scan over the full isotope table (see
         '*              DecaySeriesRepository.IndicesOf).
@@ -572,8 +558,6 @@ HandleErrors:
         '* Usage:       Adds a decay chain item to specified branch
         '* Input:       dci is a branch of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
         '* Notes:       fromDCI is passed both a DecaySeriesItem straight out
         '*              of the shared, cached pds table and (elsewhere, e.g.
         '*              the branch-contiguity fix-up loop above) an existing
@@ -631,8 +615,6 @@ HandleErrors:
         '*                          today, but nothing upstream enforces
         '*                          that as an invariant
         '* Returns:     True if any path from isotope can reach sTerminal
-        '* Author:      DDR-0002
-        '* Date:        7/7/2026
 
         If sTerminal = "END" Then
             Return True
@@ -680,8 +662,6 @@ HandleErrors:
         '* Usage:       Sorts gdcdci by .Isotopoe descending mass, then alphabetic symbol
         '* Input:       gdcdci = DecayChainBranch of DecaySeriesItems
         '* Returns:     True sort is successful
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
         '* Notes:       OptionalSortOrder: 1 = no sort (the default; this
         '*              function returns immediately without touching
         '*              gdcdci), 2 = ascending mass, 3 = descending mass -
@@ -738,8 +718,6 @@ ExitHere:
         '* Input:       a and b are gdcdci.Isotope strings
         '* Returns:     True if mass A < mass B
         '*              False if mass A = mass B AND sym A > sym B
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
         '* Notes:       Isotope strings are always "<Symbol>-<Mass>", with
         '*              an optional trailing "M" marking a metastable state
         '*              (e.g. "TC-99M"). massA/massB pull the substring
@@ -822,8 +800,6 @@ HandleErrors:
         '* Usage:       Loads decay series item to specified collection
         '* Input:       dci is a collection of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        7/19/2015
         '* Notes:       Despite the name, this does not load anything from a
         '*              collection - it field-by-field copies fromDSI into
         '*              toDSI, a caller-owned DecaySeriesItem instance. Both
