@@ -1432,13 +1432,10 @@ HandleErrors:
         'Get version from DNS TXT record
         vers = GetTxtRecord("radtoolz.com", "version=")
 
-        If Not Double.TryParse(vers, versNum) Then
+        If Not Double.TryParse(vers, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, versNum) Then
             RTZUpdate = "Unable to retrieve version information."
             GoTo exithere
         End If
-
-        'ASSERT:  vers can be converted to a double
-        versNum = Convert.ToDouble(vers)
 
 #Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
