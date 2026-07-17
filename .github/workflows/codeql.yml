@@ -1,0 +1,78 @@
+name: CodeQL (All Branches, Weekly)
+
+# This repo is VB.NET, which CodeQL cannot analyze. The only CodeQL-supported
+# surface here is the GitHub Actions workflow YAML files themselves, so this
+# workflow is scoped to the "actions" language only.
+#
+# schedule: only ever runs the copy of this file on the default branch, so a
+# first job enumerates all branches and a second job fans out over them in a
+# matrix, explicitly tagging each analysis with that branch's ref/sha.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  list-branches:
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.list.outputs.branches }}
+    steps:
+      - name: List repository branches
+        id: list
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const branches = await github.paginate(github.rest.repos.listBranches, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const matrix = branches.map(b => ({ name: b.name, sha: b.commit.sha }));
+            core.setOutput('branches', JSON.stringify(matrix));
+            core.info(`Found ${matrix.length} branch(es): ${matrix.map(b => b.name).join(', ')}`);
+
+  analyze:
+    needs: list-branches
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.list-branches.outputs.branches) }}
+    steps:
+      - name: Checkout ${{ matrix.branch.name }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.branch.sha }}
+
+      - name: Check for workflow files
+        id: check-workflows
+        run: |
+          if compgen -G ".github/workflows/*.yml" > /dev/null || compgen -G ".github/workflows/*.yaml" > /dev/null; then
+            echo "has_workflows=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_workflows=false" >> "$GITHUB_OUTPUT"
+            echo "No .github/workflows/*.yml(.yaml) files on ${{ matrix.branch.name }}; skipping CodeQL." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Initialize CodeQL
+        if: steps.check-workflows.outputs.has_workflows == 'true'
+        uses: github/codeql-action/init@v4
+        with:
+          languages: actions
+
+      - name: Perform CodeQL Analysis
+        if: steps.check-workflows.outputs.has_workflows == 'true'
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:actions"
+          ref: refs/heads/${{ matrix.branch.name }}
+          sha: ${{ matrix.branch.sha }}
