@@ -2,15 +2,48 @@
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop.Excel
 
+' The decay-chain calculation engine behind most of RadToolzFunctions.vb's
+' exported UDFs (AValue, DCF, EnumDecayChain, FGE, HalfLife, PECi, RadDecay,
+' SpA all route through GetDecayChain). Not itself a UDF - callers new up a
+' ProcessDecaySeries instance and drive it through InitBranches ->
+' GetDecayChain -> (read cDC) -> ClearBranches.
+'
+' RECURRING PATTERN NOTE (applies throughout this file, not repeated per
+' function below): most methods use the legacy VB6-style idiom of
+' "On Error GoTo HandleErrors" plus assigning the return value to the
+' function's own name (e.g. "ClearBranches = True") instead of Return/Try-
+' Catch. This is legacy unstructured error handling - per
+' section_29_stop_and_ask, modifying an existing On Error handler requires a
+' Stop-and-Ask, so none of it has been touched here; only comments have been
+' added. Two related idioms recur too: (1) many methods GoTo a HandleErrors
+' label that both logs via MsgBox and sets the function's return value to
+' False/an error string, so a caller only needs to check the boolean/Object
+' result, never an exception; (2) gdcdci()/cDC() throughout this file and its
+' callers is always a fixed-size array of DecayChainBranch (DDR-0006; a
+' Collection-backed representation before that), one slot per decay-
+' chain branch, sized to Constants.maxBranches and indexed from 1 (slot 0 is
+' reserved for GetDecayChain's consolidated, deduplicated isotope list - see
+' GetDecayChain below). Also scattered through this file are single-word
+' comments like 'GetDecayChain or 'ListAll sitting after an unrelated
+' End Function - these are leftover procedure-list bookmarks from an older
+' editor/outlining convention, not documentation; preserved as harmless
+' relics rather than removed, since deleting them is outside a comment-only
+' pass.
 Public Class ProcessDecaySeries
 
-    Public Function ClearBranches(ByRef gdcdci() As Collection, Optional Branches As Integer = maxBranches) As Boolean
-        '* Usage:       Clears the collection data structures
-        '* Input:       gdcdci() - array of Collection object
+    ''' <summary>
+    ''' Sets every branch slot from 0 to Branches (inclusive) to Nothing,
+    ''' releasing the DecayChainBranch references. Pairs with InitBranches,
+    ''' which allocates fresh DecayChainBranch objects into the same slots -
+    ''' callers use InitBranches before a GetDecayChain call and
+    ''' ClearBranches after, once the branch data has been read out (see
+    ''' AValue/DCF/HalfLife/etc.'s ExitHere blocks in RadToolzFunctions.vb).
+    ''' </summary>
+    Public Function ClearBranches(ByRef gdcdci() As DecayChainBranch, Optional Branches As Integer = maxBranches) As Boolean
+        '* Usage:       Clears the branch data structures
+        '* Input:       gdcdci() - array of DecayChainBranch object
         '*              Branches - number of collections to clear in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
 
         Dim x As Integer
         Dim Msg As String
@@ -38,31 +71,54 @@ HandleErrors:
 
 #Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function GetDecayChain(
     sParent As String, ByVal sTerminal As String,
-    ByRef gdcdci() As Collection,
+    ByRef gdcdci() As DecayChainBranch,
     Optional Instance As Integer = 1,
     Optional currBranch As Integer = 1,
     Optional nextBranch As Integer = 1,
-    Optional ByRef pds As Collection = Nothing,
-    Optional OptionalSortOrder As Integer = 1) As Boolean
+    Optional ByRef pds As IReadOnlyList(Of DecaySeriesItem) = Nothing,
+    Optional OptionalSortOrder As Integer = 1,
+    Optional ByRef reachCache As Dictionary(Of String, Boolean) = Nothing) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Gets decay chain from sParent to sTerminal including all branches
         '* Input:       sParent = starting member isotope
         '*              sTerminal = last member isotope
-        '*              gdcdci() = an empty array of Collections of DecaySeriesItems
+        '*              gdcdci() = an empty array of DecayChainBranch objects, each holding DecaySeriesItems
         '*              Instance = which recursion instance is this
         '*              currBranch = which member of the gdcdci() is being loaded
         '*              nextBranch = which member is next to be loaded
         '* Returns:     Nothing, but gdcdci() is fully loaded and ready for use
-        '* Author:      Backscatter enterprises
-        '* Date:        8/25/2023
+        '* Notes:       sParent = "ALL" is a special case (used by RTZParams/
+        '*              ListAll's data dump) that bypasses the chain-walk
+        '*              entirely and dumps the full table into gdcdci(0).
+        '*              sTerminal = "END" is the other sentinel value,
+        '*              meaning "no specific terminal - keep every branch"
+        '*              (see VerifyDecayChain and CanReachTerminal below,
+        '*              both of which special-case it); EnumDecayChain is
+        '*              the caller that passes it. Instance tracks
+        '*              recursion depth within one branch/fork's own
+        '*              daughter chain (not one counter per branch); once
+        '*              a recursive call returns with Instance > 1 the
+        '*              caller knows it is still mid-branch and skips the
+        '*              branch-cleanup/sort work below (Instance > 1 GoTo
+        '*              ExitHere), which only the outermost (Instance = 1)
+        '*              call performs once the whole tree is built.
+        '*              currBranch is the branch slot being extended by
+        '*              this call; nextBranch (only meaningful inside the
+        '*              fork loop) is the first unused slot found for a
+        '*              newly forked branch. gdcdci(0) is reserved
+        '*              throughout for the final deduplicated, sorted
+        '*              isotope list built at the end of the outermost call
+        '*              - never a branch in its own right.
 
         Dim Msg As String
         Dim x As Integer
         Dim y As Integer
         Dim z As Integer
         Dim bRsp As Boolean
+        Dim foundSlot As Boolean
 
         On Error GoTo 0
 
@@ -70,26 +126,59 @@ HandleErrors:
         sTerminal = UCase(sTerminal)
 
         If pds Is Nothing Then 'only load pds once per parent, then refer for each daughter in each branch
-            pds = New Collection
-            pds = GetDecaySeries()
+            pds = DecaySeriesRepository.GetAllList()
+        End If
+
+        If reachCache Is Nothing Then 'scoped to this top-level call only - sTerminal is fixed for the whole call tree (DDR-0002)
+            reachCache = New Dictionary(Of String, Boolean)(StringComparer.OrdinalIgnoreCase)
         End If
 
         'All Isotopes
         If sParent = "ALL" Then
-            gdcdci(0) = pds
+            Dim allBranch As New DecayChainBranch()
+            For Each dsi As DecaySeriesItem In DecaySeriesRepository.GetAllList()
+                allBranch.Add(dsi)
+            Next
+            gdcdci(0) = allBranch
             GoTo ExitHere
         End If
 
-        For x = 1 To pds.Count
-            If sParent = DirectCast(pds.Item(x).Isotope, String) Then 'sParent found
-                If (DirectCast(pds.Item(x).BranchingRatio, Double) <> 1.0#) And (sParent <> sTerminal) Then 'hit a branch point
+        ' O(1) lookup of every position where sParent occurs, in ascending
+        ' table order, instead of an O(n) scan over the full ~5,500-item
+        ' table. The full ENSDF table (unlike the old 182-isotope table)
+        ' has isotopes with more than two recorded decay modes - e.g.
+        ' Bi-214 has three (to Po-214, Tl-210, and a direct branch to
+        ' Pb-210) - so every occurrence beyond the first is a distinct
+        ' alternate branch, not just the second.
+        Dim parentIndices As IReadOnlyList(Of Integer) = DecaySeriesRepository.IndicesOf(sParent)
+
+        If parentIndices.Count > 0 Then
+            x = parentIndices(0) + 1 '1-based, to match the pds.Item(x)-style access below
+
+            If (pds(x - 1).BranchingRatio <> 1.0#) And (sParent <> sTerminal) Then 'hit a branch point
+                'Fork one branch per additional occurrence of sParent (parentIndices(1), (2), ...)
+                Dim altIndex As Integer
+                For altIndex = 1 To parentIndices.Count - 1
+                    'Skip this occurrence entirely if its subtree can never reach sTerminal -
+                    'avoids the prefix copy and the recursion beneath it for a branch that
+                    'VerifyDecayChain would only prune away afterward anyway (DDR-0002).
+                    If Not CanReachTerminal(pds(parentIndices(altIndex)).Daughter, sTerminal, pds, reachCache) Then
+                        Continue For
+                    End If
+
                     'find empty branch = nextBranch
+                    foundSlot = False
                     For y = currBranch + 1 To maxBranches
                         If (gdcdci(y).Count = 0) And (y <> currBranch) Then
                             nextBranch = y
+                            foundSlot = True
                             y = maxBranches 'abort loop
                         End If
                     Next y
+                    'All branch slots are occupied - appending onto a stale nextBranch here
+                    'would silently merge two unrelated branches' data (DEBT-0006) rather than
+                    'raise an error, so treat exhaustion as a hard failure instead.
+                    If Not foundSlot Then GoTo HandleErrors
                     'Copy everything from currBranch to nextBranch
                     For y = 1 To gdcdci(currBranch).Count
                         bRsp = AddDecayChainItem(gdcdci(currBranch).Item(y), gdcdci(nextBranch))
@@ -99,34 +188,30 @@ HandleErrors:
 
                     Next y
 
-                    'Find next instance of sParent
-                    For y = x + 1 To pds.Count
-                        If sParent = DirectCast(pds.Item(y).Isotope, String) Then 'found next instance
-                            'Copy next instance of sParent to nextBranch
-                            bRsp = AddDecayChainItem(pds.Item(y), gdcdci(nextBranch))
-                            If Not bRsp Then
-                                GoTo HandleErrors
-                            End If
-                            y = pds.Count 'abort loop
-                        End If
-                    Next y
+                    'Add this alternate occurrence of sParent to nextBranch
+                    bRsp = AddDecayChainItem(pds(parentIndices(altIndex)), gdcdci(nextBranch))
+                    If Not bRsp Then
+                        GoTo HandleErrors
+                    End If
+
                     'Follow daughter down nextBranch
-                    bRsp = GetDecayChain(DirectCast(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, String), sTerminal, gdcdci, Instance + 1, nextBranch)
+                    bRsp = GetDecayChain(gdcdci(nextBranch).Item(gdcdci(nextBranch).Count).Daughter, sTerminal, gdcdci, Instance + 1, nextBranch, pds:=pds, reachCache:=reachCache)
                     If Not bRsp Then GoTo HandleErrors
-                End If
-
-                'Load database info into collection for first parent
-                bRsp = AddDecayChainItem(pds.Item(x), gdcdci(currBranch))
-                If Not bRsp Then GoTo HandleErrors
-
-                'Continue with first daughter
-                If sParent <> sTerminal Then
-                    bRsp = GetDecayChain(DirectCast(pds.Item(x).Daughter, String), sTerminal, gdcdci, Instance + 1, currBranch)
-                    If Not bRsp Then GoTo HandleErrors
-                End If
-                x = pds.Count 'abort loop
+                Next altIndex
             End If
-        Next x
+
+            'Load database info into collection for first parent
+            bRsp = AddDecayChainItem(pds(x - 1), gdcdci(currBranch))
+            If Not bRsp Then GoTo HandleErrors
+
+            'Continue with first daughter - same prune-before-recurse guard as the fork loop above (DDR-0002)
+            If sParent <> sTerminal Then
+                If CanReachTerminal(pds(x - 1).Daughter, sTerminal, pds, reachCache) Then
+                    bRsp = GetDecayChain(pds(x - 1).Daughter, sTerminal, gdcdci, Instance + 1, currBranch, pds:=pds, reachCache:=reachCache)
+                    If Not bRsp Then GoTo HandleErrors
+                End If
+            End If
+        End If
 
         'AbortBranchSearch:
 
@@ -165,13 +250,25 @@ HandleErrors:
         Next x
 
         'Populate array element zero with key to create unique isotope enumeration
+        '* Updated:     7/6/2026 - a Collection.Add with a duplicate key throws,
+        '*              and the same isotope legitimately repeats across branches
+        '*              (e.g. Bi-214 forks three ways), so this used to rely on
+        '*              letting that exception fail silently to drop repeats.
+        '*              For a heavily-forked chain (e.g. U-238, ~70 branches) that
+        '*              is hundreds of thrown-and-caught exceptions per call - the
+        '*              dominant cost of GetDecayChain for any branching chain.
+        '*              A HashSet membership check gives the same first-occurrence-
+        '*              wins result with no exceptions on the normal path.
+        Dim seenIsotopes As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         For x = 1 To maxBranches
             'If Not gdcdci(x) Is Nothing Then
             If gdcdci(x) IsNot Nothing Then
                 For y = 1 To gdcdci(x).Count
-                    On Error Resume Next
-                    gdcdci(0).Add(gdcdci(x).Item(y), DirectCast(gdcdci(x).Item(y).Isotope, String))
-                    On Error GoTo 0
+                    Dim candidate As DecaySeriesItem = gdcdci(x).Item(y)
+                    Dim candidateIsotope As String = candidate.Isotope
+                    If seenIsotopes.Add(candidateIsotope) Then
+                        gdcdci(0).Add(candidate)
+                    End If
                 Next y
             End If
         Next x
@@ -200,8 +297,6 @@ HandleErrors:
         '* Input:       Nothing
         '* Returns:     Collection of DecaySeriesItem for every isotope
         '*              in the database, in the original table order
-        '* Author:      Backscatter enterprises
-        '* Date:        12/24/2024
         '* Updated:     7/3/2026 - data moved out of hardcoded object
         '*              initializers and into the embedded
         '*              DecaySeriesData.json resource, loaded once and
@@ -218,13 +313,17 @@ HandleErrors:
 
     'GetDecayChain
 
-    Public Function InitBranches(ByRef gdcdci() As Collection, Optional Branches As Integer = maxBranches) As Boolean
-        '* Usage:       Initializes the collection data structure
-        '* Input:       gdcdci() - array of Collection object
-        '*              Branches - number of collections to initialize in the array of
+    ''' <summary>
+    ''' Allocates a fresh, empty DecayChainBranch into every branch slot from
+    ''' 0 to Branches (inclusive). Must be called before GetDecayChain, which
+    ''' assumes every gdcdci(x) it might touch is a live DecayChainBranch (it
+    ''' checks .Count, never IsNothing, on most slots) rather than Nothing.
+    ''' </summary>
+    Public Function InitBranches(ByRef gdcdci() As DecayChainBranch, Optional Branches As Integer = maxBranches) As Boolean
+        '* Usage:       Initializes the branch data structure
+        '* Input:       gdcdci() - array of DecayChainBranch object
+        '*              Branches - number of branches to initialize in the array of
         '* Returns:     True if successful, otherwise False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
 
         Dim x As Integer
         Dim Msg As String
@@ -233,7 +332,7 @@ HandleErrors:
         InitBranches = False
 
         For x = 0 To Branches
-            gdcdci(x) = New Collection
+            gdcdci(x) = New DecayChainBranch
         Next x
 
         InitBranches = True
@@ -252,17 +351,25 @@ HandleErrors:
 
 #Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function ListAll(<ExcelArgument(AllowReference:=True)> ByVal uRngVal As String) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Lists entire database starting at uRng
         '* Input:       uRng = Cell address
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        10/29/2016
+        '* Notes:       uRngVal arrives as an already-fully-qualified Excel
+        '*              reference string (e.g. "[Book1.xlsx]Sheet1!$A$1"),
+        '*              produced by RTZParams via xlfReftext before calling
+        '*              in here - this method does not itself resolve an
+        '*              ExcelReference, it only parses the resulting text.
+        '*              The regex below splits that string into the sheet
+        '*              name (bracketed workbook name stripped) and the
+        '*              range address, since iExcel.Worksheets()/.Range()
+        '*              need them separately.
 
         On Error GoTo HandleErrors
 
-        Dim pds As Collection
+        Dim pds As IReadOnlyList(Of DecaySeriesItem)
         Dim x As Double
         Dim r As Double
         Dim c As Double
@@ -271,6 +378,10 @@ HandleErrors:
         Dim iSheet As Worksheet
         Dim uSheet As String
         Dim uRng As String = ""
+        ' Matches "]<sheetname>!<range>" - e.g. "]Sheet1!$A$1" out of
+        ' "[Book1.xlsx]Sheet1!$A$1" - capturing the sheet name (an optional
+        ' single-quoted name is tolerated but not itself captured) and the
+        ' range address as the two groups read below.
         Dim pattern As String = "\](\w*)'?!(.*)"
         Dim rRegex As New Regex(pattern)
         Dim m As Match = rRegex.Match(uRngVal)
@@ -284,6 +395,22 @@ HandleErrors:
         iSheet = DirectCast(iExcel.Worksheets(uSheet), Worksheet)
         r = Convert.ToInt32(iRng.Row)
         c = Convert.ToInt32(iRng.Column)
+
+        pds = DecaySeriesRepository.GetAllList()
+
+        ' DEBT-0004: guard against silently overwriting a populated target range.
+        Dim rowCount As Integer = 1 + pds.Count ' header row + one row per isotope
+        Const colCount As Integer = 17
+        Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
+        If iExcel.WorksheetFunction.CountA(targetRange) > 0 Then
+            Dim confirmResult As MsgBoxResult = MsgBox(
+                "The output range starting at " & targetRange.Address & " already contains data that will be overwritten. Continue?",
+                MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo, "RTZParams")
+            If confirmResult <> MsgBoxResult.Yes Then
+                ListAll = False
+                Exit Function
+            End If
+        End If
 
         'Write Headers
         iSheet.Cells(r, c) = "Isotope"
@@ -305,27 +432,25 @@ HandleErrors:
         iSheet.Cells(r, c + 16) = "BR"
         r += 1 'increment to the next row
 
-        pds = New Collection
-        pds = GetDecaySeries()
-
         For x = 1 To pds.Count
-            iSheet.Cells(r + x - 1, c) = pds.Item(x).Isotope
-            iSheet.Cells(r + x - 1, c + 1) = pds.Item(x).Lambda
-            iSheet.Cells(r + x - 1, c + 2) = pds.Item(x).DCF68inhF1
-            iSheet.Cells(r + x - 1, c + 3) = pds.Item(x).DCF68inhF5
-            iSheet.Cells(r + x - 1, c + 4) = pds.Item(x).DCF68inhM1
-            iSheet.Cells(r + x - 1, c + 5) = pds.Item(x).DCF68inhM5
-            iSheet.Cells(r + x - 1, c + 6) = pds.Item(x).DCF68inhS1
-            iSheet.Cells(r + x - 1, c + 7) = pds.Item(x).DCF68inhS5
-            iSheet.Cells(r + x - 1, c + 8) = pds.Item(x).DCF68ing
-            iSheet.Cells(r + x - 1, c + 9) = pds.Item(x).DCF72inhF1
-            iSheet.Cells(r + x - 1, c + 10) = pds.Item(x).DCF72inhM1
-            iSheet.Cells(r + x - 1, c + 11) = pds.Item(x).DCF72inhS1
-            iSheet.Cells(r + x - 1, c + 12) = pds.Item(x).DCF72ing
-            iSheet.Cells(r + x - 1, c + 13) = pds.Item(x).A1
-            iSheet.Cells(r + x - 1, c + 14) = pds.Item(x).A2
-            iSheet.Cells(r + x - 1, c + 15) = pds.Item(x).Daughter
-            iSheet.Cells(r + x - 1, c + 16) = pds.Item(x).BranchingRatio
+            Dim item As DecaySeriesItem = pds(CInt(x) - 1)
+            iSheet.Cells(r + x - 1, c) = item.Isotope
+            iSheet.Cells(r + x - 1, c + 1) = item.Lambda
+            iSheet.Cells(r + x - 1, c + 2) = item.DCF68inhF1
+            iSheet.Cells(r + x - 1, c + 3) = item.DCF68inhF5
+            iSheet.Cells(r + x - 1, c + 4) = item.DCF68inhM1
+            iSheet.Cells(r + x - 1, c + 5) = item.DCF68inhM5
+            iSheet.Cells(r + x - 1, c + 6) = item.DCF68inhS1
+            iSheet.Cells(r + x - 1, c + 7) = item.DCF68inhS5
+            iSheet.Cells(r + x - 1, c + 8) = item.DCF68ing
+            iSheet.Cells(r + x - 1, c + 9) = item.DCF72inhF1
+            iSheet.Cells(r + x - 1, c + 10) = item.DCF72inhM1
+            iSheet.Cells(r + x - 1, c + 11) = item.DCF72inhS1
+            iSheet.Cells(r + x - 1, c + 12) = item.DCF72ing
+            iSheet.Cells(r + x - 1, c + 13) = item.A1
+            iSheet.Cells(r + x - 1, c + 14) = item.A2
+            iSheet.Cells(r + x - 1, c + 15) = item.Daughter
+            iSheet.Cells(r + x - 1, c + 16) = item.BranchingRatio
         Next x
 
         ListAll = True
@@ -334,6 +459,14 @@ HandleErrors:
 
 HandleErrors:
 
+        ' 1004 ("Application-defined or object-defined error", the generic COM
+        ' automation failure Excel raises for a bad Range/Worksheets lookup)
+        ' and 9 ("Subscript out of range") are treated as benign here rather
+        ' than reported - both are swallowed and ListAll still reports
+        ' success. This tolerates a caller-supplied uRngVal that does not
+        ' resolve to a usable range/sheet (e.g. malformed reference text)
+        ' without popping an error dialog; any other error still falls
+        ' through to the MsgBox below.
         If Err.Number = 1004 Or Err.Number = 9 Then
             Err.Clear()
             ListAll = True
@@ -352,15 +485,24 @@ HandleErrors:
 
 #Disable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
 
-    Public Function VerifyDecayChain(ByVal sParent As String, ByVal sTerminal As String, ByVal vdcdci As Collection) As Boolean
+    Public Function VerifyDecayChain(ByVal sParent As String, ByVal sTerminal As String, ByVal vdcdci As DecayChainBranch) As Boolean
 #Enable Warning IDE0081 ' 'ByVal' keyword is unnecessary and can be removed.
         '* Usage:       Verifies that sParent is the first item and sTerminal is the last item
         '* Input:       sParent = starting member isotope
         '*              sTerminal = last member isotope
-        '*              vdcdci = Collection of DecaySeriesItems
+        '*              vdcdci = DecayChainBranch of DecaySeriesItems
         '* Returns:     True if sParent is first and sTerminal is last OR sTerminal is END
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
+        '* Notes:       Called once per built branch, after GetDecayChain's
+        '*              recursion completes, to decide which branches
+        '*              survive (see the "Kill branches that do not
+        '*              terminate with sTerminal" loop in GetDecayChain).
+        '*              "sTerminal = END" always passes (a branch is kept
+        '*              regardless of what it actually ends on) - this is
+        '*              the same sentinel rule CanReachTerminal mirrors for
+        '*              its own pre-build pruning check, and the two must
+        '*              stay consistent - if they disagreed, GetDecayChain
+        '*              could prune a branch before building it that this
+        '*              method would otherwise have kept, or vice versa.
 
         Dim Msg As String
 
@@ -376,8 +518,8 @@ HandleErrors:
         sParent = UCase(sParent)
         sTerminal = UCase(sTerminal)
 
-        If DirectCast(vdcdci.Item(1).Isotope, String) = sParent And
-        (DirectCast(vdcdci.Item(vdcdci.Count).Isotope, String) = sTerminal Or sTerminal = "END") Then
+        If vdcdci.Item(1).Isotope = sParent And
+        (vdcdci.Item(vdcdci.Count).Isotope = sTerminal Or sTerminal = "END") Then
             VerifyDecayChain = True
         End If
 
@@ -399,49 +541,34 @@ HandleErrors:
 
     'ClearBranches
 
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
     Public Function VerifyIsotope(uIsotope As String) As Boolean
         '* Usage:       Verifies isotope is in Class
         '* Input:       uIsotope (e.g., CS-137)
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        7/31/2015
+        '* Updated:     7/5/2026 - O(1) index lookup instead of an O(n)
+        '*              scan over the full isotope table (see
+        '*              DecaySeriesRepository.IndicesOf).
 
-        On Error GoTo HandleErrors
-
-        Dim pds As Collection
-        Dim x As Double
-        Dim r As Double
-        Dim c As Double
-        Dim Msg As String
-        Dim uRng As Object
-
-        pds = New Collection
-        pds = GetDecaySeries()
-
-        VerifyIsotope = False
-
-        For x = 1 To pds.Count
-            If DirectCast(pds.Item(x).Isotope, String) = uIsotope Then
-                VerifyIsotope = True
-                x = pds.Count 'ends loop
-            End If
-        Next
-
-HandleErrors:
-        If Err.Number <> 0 Then
-            Msg = "Error # " & Str(Err.Number) & " was generated by " _
-             & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
-            Dim msgBoxResult As Object = MsgBox(Msg, , "Error")
-        End If
+        VerifyIsotope = DecaySeriesRepository.IndicesOf(uIsotope).Count > 0
 
     End Function
 
-    Private Shared Function AddDecayChainItem(fromDCI As Object, ByRef toDCI As Collection) As Boolean
-        '* Usage:       Adds a decay chain item to specified collection
-        '* Input:       dci is a collection of decay series items
+    Private Shared Function AddDecayChainItem(fromDCI As DecaySeriesItem, ByRef toDCI As DecayChainBranch) As Boolean
+        '* Usage:       Adds a decay chain item to specified branch
+        '* Input:       dci is a branch of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
+        '* Notes:       fromDCI is passed both a DecaySeriesItem straight out
+        '*              of the shared, cached pds table and (elsewhere, e.g.
+        '*              the branch-contiguity fix-up loop above) an existing
+        '*              branch item being re-copied; both are the same
+        '*              concrete type (DDR-0006 - DecayChainBranch.Item
+        '*              returns DecaySeriesItem directly, so no late binding
+        '*              is involved either way). This defensive
+        '*              copy-via-LoadDecaySeriesItem is what keeps every
+        '*              caller from ever mutating a shared DecaySeriesItem
+        '*              instance in place, per the read-only contract
+        '*              documented on DecaySeriesRepository.GetAll/GetAllList.
 
         Dim dsi As DecaySeriesItem
         Dim bRsp As Boolean
@@ -470,19 +597,90 @@ HandleErrors:
 
     End Function
 
-    Private Shared Function BubbleSortCollection(ByRef gdcdci As Collection, OptionalSortOrder As Integer) As Boolean
-        '* Usage:       Sorts gdcdci by .Isotopoe descending mass, then alphabetic symbol
-        '* Input:       gdcdci = collection of DecaySeriesItems
-        '* Returns:     True sort is successful
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
+    <CodeAnalysis.SuppressMessage("Style", "IDE0002:Simplify Member Access", Justification:="<Pending>")>
+    Private Shared Function CanReachTerminal(isotope As String, sTerminal As String, pds As IReadOnlyList(Of DecaySeriesItem), cache As Dictionary(Of String, Boolean), Optional visiting As HashSet(Of String) = Nothing) As Boolean
+        '* Usage:       Memoized, isotope-name-only reachability check used to
+        '*              prune a GetDecayChain branch before it is built instead
+        '*              of after. No DecaySeriesItem copies, no Collection use -
+        '*              just isotope symbol comparisons over the shared table.
+        '* Input:       isotope = isotope symbol to test reachability from
+        '*              sTerminal = target isotope symbol, or "END" (always
+        '*                          reachable, matching VerifyDecayChain's own
+        '*                          "sTerminal = END" rule)
+        '*              pds = full isotope table
+        '*              cache = memoization map, scoped to one top-level
+        '*                      GetDecayChain call (sTerminal is fixed for
+        '*                      that whole call tree)
+        '*              visiting = cycle guard; decay chains are acyclic
+        '*                          today, but nothing upstream enforces
+        '*                          that as an invariant
+        '* Returns:     True if any path from isotope can reach sTerminal
 
-        Dim dsi As DecaySeriesItem
+        If sTerminal = "END" Then
+            Return True
+        End If
+
+        If isotope = sTerminal Then
+            Return True
+        End If
+
+        Dim cached As Boolean = False
+        If cache.TryGetValue(isotope, cached) Then
+            Return cached
+        End If
+
+        If visiting Is Nothing Then
+            visiting = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        End If
+
+        If visiting.Contains(isotope) Then
+            Return False 'cycle guard: treat as not provably reachable via this path
+        End If
+#Disable Warning IDE0058 ' Expression value is never used
+        visiting.Add(isotope)
+#Enable Warning IDE0058 ' Expression value is never used
+
+        Dim result As Boolean = False
+        Dim occurrences As IReadOnlyList(Of Integer) = DecaySeriesRepository.IndicesOf(isotope)
+        For Each occurrenceIndex As Integer In occurrences
+            If CanReachTerminal(pds(occurrenceIndex).Daughter, sTerminal, pds, cache, visiting) Then
+                result = True
+                Exit For
+            End If
+        Next occurrenceIndex
+
+#Disable Warning IDE0058 ' Expression value is never used
+        visiting.Remove(isotope)
+#Enable Warning IDE0058 ' Expression value is never used
+        cache(isotope) = result
+
+        Return result
+
+    End Function 'CanReachTerminal
+
+    Private Shared Function BubbleSortCollection(ByRef gdcdci As DecayChainBranch, OptionalSortOrder As Integer) As Boolean
+        '* Usage:       Sorts gdcdci by .Isotopoe descending mass, then alphabetic symbol
+        '* Input:       gdcdci = DecayChainBranch of DecaySeriesItems
+        '* Returns:     True sort is successful
+        '* Notes:       OptionalSortOrder: 1 = no sort (the default; this
+        '*              function returns immediately without touching
+        '*              gdcdci), 2 = ascending mass, 3 = descending mass -
+        '*              see EnumDecayChain's own OptionalSortOrder argument,
+        '*              which is threaded straight through GetDecayChain to
+        '*              here. A classic bubble sort: repeated passes
+        '*              swapping adjacent out-of-order pairs until a full
+        '*              pass makes no swaps (NoExchanges stays True). A
+        '*              "swap" here is a direct in-place exchange via
+        '*              DecayChainBranch's Item(i) setter (DDR-0006) - O(1)
+        '*              per swap, replacing the Collection-based remove-and-
+        '*              reinsert-by-key dance this used to require (Collection
+        '*              had no indexer-based Item(i) = value setter), which
+        '*              was O(n) per swap on top of the O(n^2) comparisons
+        '*              already inherent to bubble sort.
+
         Dim i As Integer
         Dim j As Integer
         Dim NoExchanges As Boolean
-        Dim Msg As String
-        Dim bRsp As Boolean
 
         ' Loop until no more "exchanges" are made.
 
@@ -498,17 +696,11 @@ HandleErrors:
 
                 'Substitution when isotope1 is less than the isotope2 following
                 '***Assert OptionalSortOrder = {2,3}
-                If DSIKeyCompare(DirectCast(gdcdci.Item(i).Isotope, String), DirectCast(gdcdci.Item(i + 1).Isotope, String), OptionalSortOrder) Then
+                If DSIKeyCompare(gdcdci.Item(i).Isotope, gdcdci.Item(i + 1).Isotope, OptionalSortOrder) Then
                     NoExchanges = False
-                    dsi = New DecaySeriesItem
-                    bRsp = LoadDecaySeriesItem(gdcdci.Item(i), dsi)
-                    If Not bRsp Then GoTo HandleErrors
-                    gdcdci.Remove(i)
-                    If i < gdcdci.Count Then
-                        gdcdci.Add(dsi, dsi.Isotope, gdcdci.Item(i + 1).Isotope)
-                    Else
-                        gdcdci.Add(dsi, dsi.Isotope)
-                    End If
+                    Dim temp As DecaySeriesItem = gdcdci.Item(i)
+                    gdcdci.Item(i) = gdcdci.Item(i + 1)
+                    gdcdci.Item(i + 1) = temp
                 End If
 
             Next i
@@ -519,15 +711,6 @@ ExitHere:
         BubbleSortCollection = True
         Exit Function
 
-HandleErrors:
-        If Err.Number <> 0 Then
-            Msg = "Error # " & Str(Err.Number) & " was generated by " _
-             & Err.Source & Chr(13) & "Error Line: " & Erl() & Chr(13) & Err.Description
-            Dim msgBoxResult As Object = MsgBox(Msg, , "Error")
-        End If
-
-        BubbleSortCollection = False
-
     End Function 'BubbleSortCollection
 
     Private Shared Function DSIKeyCompare(a As String, b As String, Optional OptionalSortOrder As Double = 1) As Boolean
@@ -535,8 +718,19 @@ HandleErrors:
         '* Input:       a and b are gdcdci.Isotope strings
         '* Returns:     True if mass A < mass B
         '*              False if mass A = mass B AND sym A > sym B
-        '* Author:      Backscatter enterprises
-        '* Date:        12/25/2014
+        '* Notes:       Isotope strings are always "<Symbol>-<Mass>", with
+        '*              an optional trailing "M" marking a metastable state
+        '*              (e.g. "TC-99M"). massA/massB pull the substring
+        '*              after the "-" and strip a trailing "M" before Val()
+        '*              converts it to a number, so metastable states sort
+        '*              by the same mass as their ground state and are only
+        '*              distinguished afterward by the symA/symB comparison
+        '*              (which re-appends "M" so e.g. "TC-99M" sorts after
+        '*              "TC-99"). The return value's meaning flips with
+        '*              OptionalSortOrder (see the Select Case below) -
+        '*              despite the fixed doc above, it is really "should a
+        '*              and b swap" per the caller's requested direction,
+        '*              not always literally "mass A < mass B".
 
         '***Assert a<>b
 
@@ -602,34 +796,47 @@ HandleErrors:
 
     'AddDecayChainItem
 
-    Private Shared Function LoadDecaySeriesItem(fromDSI As Object, ByRef toDSI As DecaySeriesItem) As Boolean
+    Private Shared Function LoadDecaySeriesItem(fromDSI As DecaySeriesItem, ByRef toDSI As DecaySeriesItem) As Boolean
         '* Usage:       Loads decay series item to specified collection
         '* Input:       dci is a collection of decay series items
         '* Returns:     True if successful, else False
-        '* Author:      Backscatter enterprises
-        '* Date:        7/19/2015
+        '* Notes:       Despite the name, this does not load anything from a
+        '*              collection - it field-by-field copies fromDSI into
+        '*              toDSI, a caller-owned DecaySeriesItem instance. Both
+        '*              are DecaySeriesItem (DDR-0006; fromDSI was
+        '*              previously typed Object for late-bound duck typing
+        '*              against either a real DecaySeriesItem or a
+        '*              Collection.Item(x) result - DecayChainBranch.Item
+        '*              now always returns DecaySeriesItem directly, so that
+        '*              is no longer needed). This is the one place that
+        '*              performs the "copy properties into a new
+        '*              DecaySeriesItem" step referenced by
+        '*              DecaySeriesRepository's read-only contract - every
+        '*              consumer that needs a modifiable DecaySeriesItem
+        '*              goes through here rather than mutating a shared
+        '*              cached instance.
 
         Dim Msg As String
 
         On Error GoTo HandleError
 
-        toDSI.Isotope = DirectCast(fromDSI.Isotope, String)
-        toDSI.DCF68inhF1 = DirectCast(fromDSI.DCF68inhF1, Double)
-        toDSI.DCF68inhF5 = DirectCast(fromDSI.DCF68inhF5, Double)
-        toDSI.DCF68inhM1 = DirectCast(fromDSI.DCF68inhM1, Double)
-        toDSI.DCF68inhM5 = DirectCast(fromDSI.DCF68inhM5, Double)
-        toDSI.DCF68inhS1 = DirectCast(fromDSI.DCF68inhS1, Double)
-        toDSI.DCF68inhS5 = DirectCast(fromDSI.DCF68inhS5, Double)
-        toDSI.DCF68ing = DirectCast(fromDSI.DCF68ing, Double)
-        toDSI.DCF72inhF1 = DirectCast(fromDSI.DCF72inhF1, Double)
-        toDSI.DCF72inhM1 = DirectCast(fromDSI.DCF72inhM1, Double)
-        toDSI.DCF72inhS1 = DirectCast(fromDSI.DCF72inhS1, Double)
-        toDSI.DCF72ing = DirectCast(fromDSI.DCF72ing, Double)
-        toDSI.A1 = DirectCast(fromDSI.A1, Double)
-        toDSI.A2 = DirectCast(fromDSI.A2, Double)
-        toDSI.Daughter = DirectCast(fromDSI.Daughter, String)
-        toDSI.Lambda = DirectCast(fromDSI.Lambda, Double)
-        toDSI.BranchingRatio = DirectCast(fromDSI.BranchingRatio, Double)
+        toDSI.Isotope = fromDSI.Isotope
+        toDSI.DCF68inhF1 = fromDSI.DCF68inhF1
+        toDSI.DCF68inhF5 = fromDSI.DCF68inhF5
+        toDSI.DCF68inhM1 = fromDSI.DCF68inhM1
+        toDSI.DCF68inhM5 = fromDSI.DCF68inhM5
+        toDSI.DCF68inhS1 = fromDSI.DCF68inhS1
+        toDSI.DCF68inhS5 = fromDSI.DCF68inhS5
+        toDSI.DCF68ing = fromDSI.DCF68ing
+        toDSI.DCF72inhF1 = fromDSI.DCF72inhF1
+        toDSI.DCF72inhM1 = fromDSI.DCF72inhM1
+        toDSI.DCF72inhS1 = fromDSI.DCF72inhS1
+        toDSI.DCF72ing = fromDSI.DCF72ing
+        toDSI.A1 = fromDSI.A1
+        toDSI.A2 = fromDSI.A2
+        toDSI.Daughter = fromDSI.Daughter
+        toDSI.Lambda = fromDSI.Lambda
+        toDSI.BranchingRatio = fromDSI.BranchingRatio
 
         LoadDecaySeriesItem = True
         Exit Function
@@ -646,10 +853,5 @@ HandleError:
     End Function 'LoadDecaySeriesItem
 
     'ListAll
-
-    Private Shared Function ReferenceToRange(<ExcelArgument(AllowReference:=True)> xlref As Object) As Object
-        Dim strAddress As String = DirectCast(XlCall.Excel(XlCall.xlfReftext, xlref, True), String)
-        ReferenceToRange = ExcelDnaUtil.Application.Range(strAddress)
-    End Function
 
 End Class

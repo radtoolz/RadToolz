@@ -17,19 +17,59 @@ on:
   schedule:
     - cron: '45 21 * * 0'
 
+permissions:
+  contents: read
+
 jobs:
   SCS:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
-      - uses: microsoft/setup-msbuild@v3
+      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
 
       - name: Set up projects for analysis
         uses: security-code-scan/security-code-scan-add-action@f8ff4f2763ed6f229eded80b1f9af82ae7f32a0d
 
       - name: Restore dependencies
         run: nuget restore
+
+      - name: Work around security-code-scan-add-action's missing YamlDotNet analyzer wiring
+        shell: pwsh
+        run: |
+          # DDR-0012. security-code-scan-add-action wires only SecurityCodeScan.VS2019.dll as an
+          # <Analyzer> for packages.config-style projects, not its YamlDotNet.dll dependency - every
+          # SCS analyzer type-initializes against YamlDotNet and throws FileNotFoundException before
+          # it can run, so SCS has been scanning nothing. Confirmed both locally and against this
+          # repo's own CI logs. Discovers whatever version nuget restore actually pulled (the action
+          # always installs "latest", not a pinned version) rather than hardcoding one.
+          $scsDir = Get-ChildItem -Path packages -Directory -Filter "SecurityCodeScan.VS2019.*" | Select-Object -First 1
+          if (-not $scsDir) {
+            Write-Host "::error::SecurityCodeScan.VS2019 package directory not found under packages/ - cannot patch analyzer wiring."
+            exit 1
+          }
+          $yamlDotNetPath = Join-Path $scsDir.FullName "analyzers\dotnet\YamlDotNet.dll"
+          if (-not (Test-Path $yamlDotNetPath)) {
+            Write-Host "::error::Expected $yamlDotNetPath to exist but it does not - SecurityCodeScan package layout may have changed."
+            exit 1
+          }
+
+          $projectPath = "RadToolz\RadToolz.vbproj"
+          $xml = [xml](Get-Content -Path $projectPath)
+          $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+          $ns.AddNamespace("x", "http://schemas.microsoft.com/developer/msbuild/2003")
+
+          $analyzerNode = $xml.CreateElement("Analyzer", $xml.Project.NamespaceURI)
+          $includeAttr = $xml.CreateAttribute("Include")
+          $includeAttr.Value = "..\packages\$($scsDir.Name)\analyzers\dotnet\YamlDotNet.dll"
+          $analyzerNode.Attributes.Append($includeAttr) | Out-Null
+
+          $itemGroupNode = $xml.CreateElement("ItemGroup", $xml.Project.NamespaceURI)
+          $itemGroupNode.AppendChild($analyzerNode) | Out-Null
+          $xml.SelectSingleNode("//x:Project", $ns).AppendChild($itemGroupNode) | Out-Null
+          $xml.Save($projectPath)
+
+          Write-Host "Added missing analyzer reference: $($includeAttr.Value)"
 
       - name: Build
         shell: pwsh
@@ -47,3 +87,32 @@ jobs:
             exit 1
           }
           Write-Host "No SecurityCodeScan findings."
+
+      - name: Fail if NetAnalyzers found a Security-category finding
+        shell: pwsh
+        run: |
+          # DEBT-0010 gating phase. Explicit rule IDs, not a numeric range - the NetAnalyzers
+          # "Security" category's IDs aren't contiguous (e.g. CA2100/CA2109/CA2119/CA2153 sit among
+          # non-security CA21xx rules), so a range regex would under- and over-match. List is the
+          # full Security category per https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/security-warnings
+          $securityRuleIds = @(
+            'CA2100','CA2109','CA2119','CA2153',
+            'CA2300','CA2301','CA2302','CA2305','CA2310','CA2311','CA2312','CA2315',
+            'CA2321','CA2322','CA2326','CA2327','CA2328','CA2329','CA2330',
+            'CA2350','CA2351','CA2352','CA2353','CA2354','CA2355','CA2356','CA2361','CA2362',
+            'CA3001','CA3002','CA3003','CA3004','CA3006','CA3007','CA3008','CA3009','CA3010','CA3011','CA3012',
+            'CA3061','CA3075','CA3076','CA3077','CA3147',
+            'CA5350','CA5351','CA5358','CA5359','CA5360','CA5361','CA5362','CA5363','CA5364','CA5365',
+            'CA5366','CA5367','CA5368','CA5369','CA5370','CA5371','CA5372','CA5373','CA5374','CA5375',
+            'CA5376','CA5377','CA5378','CA5379','CA5380','CA5381','CA5382','CA5383','CA5384','CA5385',
+            'CA5386','CA5387','CA5388','CA5389','CA5390','CA5391','CA5392','CA5393','CA5394','CA5395',
+            'CA5396','CA5397','CA5398','CA5399','CA5400','CA5401','CA5402','CA5403','CA5404','CA5405'
+          )
+          $pattern = 'warning (' + ($securityRuleIds -join '|') + '):'
+          $findings = Select-String -Path build.log -Pattern $pattern
+          if ($findings) {
+            Write-Host "::error::NetAnalyzers found $($findings.Count) potential security issue(s) - see the Build step log for full detail:"
+            $findings | ForEach-Object { Write-Host $_.Line }
+            exit 1
+          }
+          Write-Host "No NetAnalyzers security-category findings."

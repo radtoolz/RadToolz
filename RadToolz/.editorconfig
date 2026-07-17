@@ -15,3 +15,23 @@ dotnet_diagnostic.CA1703.severity = none
 dotnet_diagnostic.CA1704.severity = none
 
 dotnet_diagnostic.CA1709.severity = none
+
+# DEBT-0010/DEBT-0011: Microsoft.CodeAnalysis.NetAnalyzers is intended to be scoped to security rules
+# only. This list suppresses non-security rules NetAnalyzers raises on this codebase.
+# DDR-0013 removed ../JJPAnalysisRules.ruleset's Microsoft.Analyzers.ManagedCodeAnalysis block, which
+# was force-enabling CA1502/CA1024/CA1031/CA1045/CA1060 via /ruleset: independent of .editorconfig
+# (that mechanism is why DEBT-0011 couldn't suppress CA1502 here before). CA1305/CA1707/CA1822/CA2263
+# still need the explicit entries below regardless - verified they're NOT solely dependent on that
+# ruleset block (confirmed via isolated rebuild: they persist with the block removed and this list
+# absent, and are suppressed once this list is present). Not exhaustive against every rule
+# NetAnalyzers could ever enable; a newly-triggered non-security rule shows up as a build warning
+# (report-only, does not fail the build) until added here.
+dotnet_diagnostic.CA1024.severity = none
+dotnet_diagnostic.CA1031.severity = none
+dotnet_diagnostic.CA1045.severity = none
+dotnet_diagnostic.CA1060.severity = none
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1502.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA2263.severity = none
