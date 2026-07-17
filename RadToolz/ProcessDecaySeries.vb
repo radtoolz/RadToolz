@@ -122,6 +122,7 @@ HandleErrors:
         Dim y As Integer
         Dim z As Integer
         Dim bRsp As Boolean
+        Dim foundSlot As Boolean
 
         On Error GoTo 0
 
@@ -170,12 +171,18 @@ HandleErrors:
                     End If
 
                     'find empty branch = nextBranch
+                    foundSlot = False
                     For y = currBranch + 1 To maxBranches
                         If (gdcdci(y).Count = 0) And (y <> currBranch) Then
                             nextBranch = y
+                            foundSlot = True
                             y = maxBranches 'abort loop
                         End If
                     Next y
+                    'All branch slots are occupied - appending onto a stale nextBranch here
+                    'would silently merge two unrelated branches' data (DEBT-0006) rather than
+                    'raise an error, so treat exhaustion as a hard failure instead.
+                    If Not foundSlot Then GoTo HandleErrors
                     'Copy everything from currBranch to nextBranch
                     For y = 1 To gdcdci(currBranch).Count
                         bRsp = AddDecayChainItem(gdcdci(currBranch).Item(y), gdcdci(nextBranch))
