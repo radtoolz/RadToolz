@@ -1455,17 +1455,17 @@ HandleErrors:
 
 #Disable Warning IDE0058 ' Expression value is never used
         If versNum > RadToolzVersion Then ' Need an update
-            Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz Is now at version " + vers + ".  You should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
             dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
 
-            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://www.radtoolz.com/")
+            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://github.com/radtoolz/RadToolz/releases/latest")
             vers = "Current RadToolz version Is " & vers & "."
         ElseIf versNum < RadToolzVersion Then ' Pre-release version
             vers = ("RadToolz Is now at version " + vers + ".  You have pre-release version ") & RTZVers().ToString
         ElseIf versNum = RadToolzVersion And RadToolzPreRelease <> "" Then ' Pre-release of current version
-            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to www.RadToolz.com?"
+            Msg = ("RadToolz " + vers + " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
             dialogResult = MsgBox(Msg, MsgBoxStyle.Critical Or MsgBoxStyle.YesNo, "Update RadToolz")
-            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://www.radtoolz.com/")
+            If dialogResult = MsgBoxResult.Yes Then Process.Start("https://github.com/radtoolz/RadToolz/releases/latest")
             vers = "Current RadToolz version Is " & vers & "."
         Else ' Current release version
             vers = "RadToolz Is up to date." & no_input
