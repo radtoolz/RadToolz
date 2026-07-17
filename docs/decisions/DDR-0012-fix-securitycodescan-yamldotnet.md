@@ -1,5 +1,5 @@
 DDR-0012: Fix SecurityCodeScan's non-functional analyzer wiring in CI
-Status: Proposed
+Status: Accepted
 Date: 2026-07-17
 Task: Discovered during DEBT-0011 investigation (Large - security-sensitive CI gate)
 
@@ -59,6 +59,14 @@ Alternatives Considered
   3. Report the bug upstream to security-code-scan-add-action and wait -
      rejected as the sole fix: worth doing separately, but leaves the
      gate non-functional in the meantime for an unknown period.
+
+Verification
+  Landed as commit c235f05, run 29611457483. Confirmed via the real CI
+  log: the Build step's vbc.exe invocation carries both
+  /analyzer:...SecurityCodeScan.VS2019.dll and
+  /analyzer:...YamlDotNet.dll; zero BC42376/AD0001/TypeInitialization
+  lines anywhere in the run; only the known, accepted CA1502 x3
+  (DEBT-0011) remains. SecurityCodeScan ran clean for the first time.
 
 Consequences
   Positive: SecurityCodeScan will actually scan code for the first time
