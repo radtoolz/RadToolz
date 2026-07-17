@@ -126,7 +126,7 @@ Public Module DnsFunctions
                     txt = Marshal.PtrToStringUni(txtPointer)
 
                     ' Match the prefix
-                    If txt.StartsWith(prefix) Then
+                    If txt IsNot Nothing AndAlso txt.StartsWith(prefix, StringComparison.Ordinal) Then
                         Return txt.Substring(prefix.Length).Trim().ToString
                     End If
                 Next
