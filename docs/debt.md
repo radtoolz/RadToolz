@@ -106,6 +106,14 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Date recorded:** 2026-07-17
 - **Date closed:** 2026-07-17
 
+## DEBT-0017b: Redundant-invocation debounce logic is duplicated between RTZFunctions and ListAll
+
+- **Location:** `RadToolzFunctions.vb` (`RTZFunctions`), `ProcessDecaySeries.vb` (`ListAll`).
+- **Description:** DDR-0017 added two layered mechanisms to both `RTZFunctions` and `ListAll` (called by `RTZParams`) to stop Excel's redundant same-range re-invocations (root-caused to `AllowReference:=True` making both functions effectively volatile, per github.com/Excel-DNA/ExcelDna/issues/86) from popping the DDR-0014 overwrite-confirmation dialog multiple times: (1) an in-progress marker (`Shared`/module-level `HashSet(Of String)`), checked and set as the earliest possible statement each function can identify its own target by, catching a second call that arrives before the first completes; (2) a short-lived (2-second) completed-write debounce (`rangeKey As String, writeUtc As DateTime`), catching a genuinely-later re-trigger after the marker has already been cleared. Both write sites independently implement both mechanisms. Per `section_09`'s duplication guidance, a second occurrence is duplicated with a recorded debt entry rather than extracted (extraction is for a third occurrence) — this is that entry, mirroring DEBT-0015b's precedent for the same category of decision.
+- **Risk:** Informational (maintainability only — a debounce-window or key-format change made in one copy could be missed in the other).
+- **Suggested remedy:** If a third sheet-writing UDF ever needs the same overwrite-guard-plus-debounce pattern, extract a shared helper at that point (Rule of Three) rather than duplicating a third time.
+- **Date recorded:** 2026-07-20
+
 ## DEBT-0015b: RTZUpdate's version-check logic is duplicated in RadToolzAddIn.vb
 
 - **Location:** `RadToolzFunctions.vb` (`RTZUpdate`/`ComputeRtzUpdateStatus`), `RadToolzAddIn.vb` (`CheckForUpdate`).

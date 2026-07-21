@@ -31,6 +31,25 @@ Imports Microsoft.Office.Interop.Excel
 ' pass.
 Public Class ProcessDecaySeries
 
+    ' DDR-0017: debounces ListAll's overwrite-confirmation guard against
+    ' redundant re-invocations for the same target range that Excel issues
+    ' in rapid succession (observed 2-3x on workbook open) - see ListAll
+    ' below. A new ProcessDecaySeries instance is created per RTZParams
+    ' call, so this state must be Shared to survive across those calls.
+    Private Shared _lastListAllRangeKey As String
+    Private Shared _lastListAllWriteUtc As DateTime
+
+    ' DDR-0017 follow-up: a completed-write timestamp alone does not catch
+    ' a REENTRANT call for the same range that arrives while an earlier
+    ' invocation is still in flight (confirmed via diagnostic logging: two
+    ' invocations landed at the identical millisecond, both reading
+    ' _lastListAllRangeKey as unset, because neither had reached the
+    ' post-write bookkeeping yet - consistent with MsgBox's modal message
+    ' loop letting Excel re-enter ListAll before the first call returns).
+    ' This tracks ranges currently being handled so a reentrant call can be
+    ' detected immediately, before either the guard or the write runs.
+    Private Shared _listAllInProgressKeys As New HashSet(Of String)
+
     ''' <summary>
     ''' Sets every branch slot from 0 to Branches (inclusive) to Nothing,
     ''' releasing the DecayChainBranch references. Pairs with InitBranches,
@@ -369,6 +388,29 @@ HandleErrors:
 
         On Error GoTo HandleErrors
 
+        ' DDR-0017 follow-up: AllowReference:=True (required so RTZParams
+        ' receives uRng as a genuine cell reference, not its resolved value)
+        ' makes this function effectively volatile per Excel-DNA's own
+        ' documented behavior (github.com/Excel-DNA/ExcelDna/issues/86) -
+        ' Excel can dispatch two evaluations of the same formula back-to-back
+        ' during workbook open, independent of anything this function does.
+        ' A later-positioned in-progress check (keyed on the fully-resolved
+        ' target range, after several COM calls to resolve Range/Worksheets)
+        ' lost this race in testing: those COM calls gave a second
+        ' near-simultaneous call enough of a window to also pass the check
+        ' before the first call reached its own marker-set. uRngVal is the
+        ' raw input string - no COM calls needed to read it - so checking
+        ' and marking it as the very first statement closes that window to
+        ' the minimum possible.
+        Dim isReentrant As Boolean = _listAllInProgressKeys.Contains(uRngVal)
+
+        If isReentrant Then
+            ListAll = True
+            Exit Function
+        End If
+
+        _listAllInProgressKeys.Add(uRngVal)
+
         Dim pds As IReadOnlyList(Of DecaySeriesItem)
         Dim x As Double
         Dim r As Double
@@ -402,11 +444,32 @@ HandleErrors:
         Dim rowCount As Integer = 1 + pds.Count ' header row + one row per isotope
         Const colCount As Integer = 17
         Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
+
+        ' DDR-0017: Excel can re-invoke RTZParams for this exact same range
+        ' again shortly after a completed write (e.g. its own write counts
+        ' as one of the "any change" triggers noted above) - without this,
+        ' that re-invocation would independently re-prompt because the
+        ' range still holds this function's own just-written data. Skip
+        ' straight to success if we wrote this identical range moments ago.
+        ' (The reentrancy case - two evaluations racing before either
+        ' completes - is handled by the uRngVal-keyed check above; this
+        ' timestamp debounce only needs to catch a genuinely-later repeat.)
+        Dim rangeKey As String = targetRange.Address(External:=True)
+        Dim debounceElapsed As TimeSpan = DateTime.UtcNow - _lastListAllWriteUtc
+        Dim debounceMatch As Boolean = StrComp(rangeKey, _lastListAllRangeKey) = 0 AndAlso debounceElapsed < TimeSpan.FromSeconds(2)
+
+        If debounceMatch Then
+            _listAllInProgressKeys.Remove(uRngVal)
+            ListAll = True
+            Exit Function
+        End If
+
         If iExcel.WorksheetFunction.CountA(targetRange) > 0 Then
             Dim confirmResult As MsgBoxResult = MsgBox(
                 "The output range starting at " & targetRange.Address & " already contains data that will be overwritten. Continue?",
                 MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo, "RTZParams")
             If confirmResult <> MsgBoxResult.Yes Then
+                _listAllInProgressKeys.Remove(uRngVal)
                 ListAll = False
                 Exit Function
             End If
@@ -453,11 +516,27 @@ HandleErrors:
             iSheet.Cells(r + x - 1, c + 16) = item.BranchingRatio
         Next x
 
+        ' DDR-0017: record this write so a redundant re-invocation of this
+        ' exact range within the debounce window (checked above) short-circuits.
+        _lastListAllRangeKey = rangeKey
+        _lastListAllWriteUtc = DateTime.UtcNow
+        _listAllInProgressKeys.Remove(uRngVal)
+
         ListAll = True
 
         Exit Function
 
 HandleErrors:
+
+        ' DDR-0017 follow-up: uRngVal's own entry is safe to remove even if
+        ' the error occurred before this function's own guard logic ran -
+        ' the parameter itself is never Nothing (arrives as a fully-resolved
+        ' reference string from RTZParams), and HashSet(Of String).Remove
+        ' for a key that was never added is a safe no-op. This covers every
+        ' error exit from this function without needing to touch the legacy
+        ' On Error control flow itself (see section_29_stop_and_ask on
+        ' modifying it).
+        _listAllInProgressKeys.Remove(uRngVal)
 
         ' 1004 ("Application-defined or object-defined error", the generic COM
         ' automation failure Excel raises for a bad Range/Worksheets lookup)

@@ -29,6 +29,24 @@ Imports Microsoft.Office.Interop.Excel
 
 Public Module MyFunctions
 
+    ' DDR-0017: debounces RTZFunctions' overwrite-confirmation guard against
+    ' redundant re-invocations for the same target range that Excel issues
+    ' in rapid succession (observed 2-3x on workbook open) - see
+    ' RTZFunctions below. Duplicated from ProcessDecaySeries.ListAll's
+    ' identical debounce (DEBT-0015b-style: second occurrence, duplicated
+    ' with a recorded debt entry rather than extracted - see debt.md).
+    Private _lastRtzFunctionsRangeKey As String
+    Private _lastRtzFunctionsWriteUtc As DateTime
+
+    ' DDR-0017 follow-up: a completed-write timestamp alone does not catch a
+    ' REENTRANT call for the same range arriving while an earlier invocation
+    ' is still in flight - confirmed for ListAll via diagnostic logging
+    ' (two invocations landed at the identical millisecond, both reading the
+    ' debounce state as unset, consistent with MsgBox's modal message loop
+    ' letting Excel re-enter before the first call returns). Duplicated here
+    ' for the same reason as the debounce fields above.
+    Private _rtzFunctionsInProgressKeys As New HashSet(Of String)
+
     <ExcelFunction(Description:="Return Number to desired precision", Category:="RadToolz")>
     Public Function ANSIRound(
         <ExcelArgument(Name:="Number", Description:="is the number you want to round")>
@@ -1080,6 +1098,28 @@ HandleErrors:
         Dim cCellAddr As String = DirectCast(Excel(xlfReftext, DirectCast(XlCall.Excel(XlCall.xlfCaller), ExcelReference), True), String)
 #Enable Warning IDE0002 ' Simplify Member Access
         Dim uCellAddr As String = DirectCast(Excel(xlfReftext, uRng, True), String)
+
+        ' DDR-0017 follow-up: AllowReference:=True (required so RTZFunctions
+        ' receives uRng as a genuine cell reference, not its resolved value)
+        ' makes this function effectively volatile per Excel-DNA's own
+        ' documented behavior (github.com/Excel-DNA/ExcelDna/issues/86) -
+        ' Excel can dispatch two evaluations of the same formula back-to-back
+        ' during workbook open, independent of anything this function does.
+        ' A later-positioned in-progress check (keyed on the fully-resolved
+        ' target range, after several more COM calls to resolve
+        ' Range/Worksheets) lost this race in testing on ListAll's identical
+        ' pattern: those COM calls gave a second near-simultaneous call
+        ' enough of a window to also pass the check before the first call
+        ' reached its own marker-set. uCellAddr is already resolved above
+        ' and needs no further COM calls, so checking and marking it here -
+        ' as early as this function can identify its target - closes that
+        ' window to the minimum this function's own structure allows.
+        If _rtzFunctionsInProgressKeys.Contains(uCellAddr) Then
+            RTZFunctions = "Functions for Radtoolz version " & RTZVers().ToString
+            Exit Function
+        End If
+        _rtzFunctionsInProgressKeys.Add(uCellAddr)
+
         Dim iRng As Range
         Dim iSheet As Worksheet
         Dim uSheet As String
@@ -1092,6 +1132,7 @@ HandleErrors:
 
         'Ensure calling cell range and user defined range are not the same
         If StrComp(cCellAddr, uCellAddr) = 0 Then
+            _rtzFunctionsInProgressKeys.Remove(uCellAddr)
             RTZFunctions = ExcelError.ExcelErrorValue
             Exit Function
         End If
@@ -1113,11 +1154,30 @@ HandleErrors:
         Const rowCount As Integer = 18
         Const colCount As Integer = 2
         Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
+
+        ' DDR-0017: Excel can re-invoke RTZFunctions for this exact same range
+        ' again shortly after a completed write (e.g. its own write counts
+        ' as one of the "any change" triggers noted above) - without this,
+        ' that re-invocation would independently re-prompt because the
+        ' range still holds this function's own just-written data. Skip
+        ' straight to success if we wrote this identical range moments ago.
+        ' (The reentrancy case - two evaluations racing before either
+        ' completes - is handled by the uCellAddr-keyed check above; this
+        ' timestamp debounce only needs to catch a genuinely-later repeat.)
+        Dim rangeKey As String = targetRange.Address(External:=True)
+        If StrComp(rangeKey, _lastRtzFunctionsRangeKey) = 0 AndAlso
+           (DateTime.UtcNow - _lastRtzFunctionsWriteUtc) < TimeSpan.FromSeconds(2) Then
+            _rtzFunctionsInProgressKeys.Remove(uCellAddr)
+            RTZFunctions = "Functions for Radtoolz version " & RTZVers().ToString
+            Exit Function
+        End If
+
         If iExcel.WorksheetFunction.CountA(targetRange) > 0 Then
             Dim confirmResult As MsgBoxResult = MsgBox(
                 "The output range starting at " & targetRange.Address & " already contains data that will be overwritten. Continue?",
                 MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo, "RTZFunctions")
             If confirmResult <> MsgBoxResult.Yes Then
+                _rtzFunctionsInProgressKeys.Remove(uCellAddr)
                 RTZFunctions = ExcelError.ExcelErrorValue
                 Exit Function
             End If
@@ -1180,6 +1240,12 @@ HandleErrors:
         iSheet.Cells(r, c) = "RTZVers"
         iSheet.Cells(r, c + 1) = "Returns version of RadToolz being used"
 
+        ' DDR-0017: record this write so a redundant re-invocation of this
+        ' exact range within the debounce window (checked above) short-circuits.
+        _lastRtzFunctionsRangeKey = rangeKey
+        _lastRtzFunctionsWriteUtc = DateTime.UtcNow
+        _rtzFunctionsInProgressKeys.Remove(uCellAddr)
+
         RTZFunctions = "Functions for Radtoolz version " & RTZVers().ToString
 
         ' Assumption: uRng is read here only through the C API (Excel(xlfReftext, ...))
@@ -1194,6 +1260,13 @@ HandleErrors:
         Exit Function
 
 HandleErrors:
+
+        ' DDR-0017 follow-up: uCellAddr is Nothing here if the error occurred
+        ' before it was computed above; HashSet(Of String).Remove(Nothing) is
+        ' a safe no-op for a reference type, so this covers every error exit
+        ' from this function without needing to touch the legacy On Error
+        ' control flow itself (see section_29_stop_and_ask on modifying it).
+        _rtzFunctionsInProgressKeys.Remove(uCellAddr)
 
         If Err.Number = 1004 Then
             Err.Clear()
@@ -1443,15 +1516,15 @@ HandleErrors:
             Dim promptMessage As String = Nothing
 
             If versNum > RadToolzVersion Then ' Need an update
-                promptMessage = ("RadToolz Is now at version " & vers & ".  You should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
-                resultText = "Newer RadToolz version " & vers & " Is available.  You have version " & RTZVers().ToString & " installed."
+                promptMessage = ("RadToolz is now at version " & vers & ".  You should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
+                resultText = "Newer RadToolz version " & vers & " is available.  You have version " & RTZVers().ToString & " installed."
             ElseIf versNum < RadToolzVersion Then ' Pre-release version
-                resultText = ("RadToolz Is now at version " & vers & ".  You have pre-release version ") & RTZVers().ToString
+                resultText = ("RadToolz is now at version " & vers & ".  You have pre-release version ") & RTZVers().ToString
             ElseIf versNum = RadToolzVersion AndAlso RadToolzPreRelease <> "" Then ' Pre-release of current version
                 promptMessage = ("RadToolz " & vers & " has been released.  You have a pre-release version And should update.") & vbCrLf & "Open browser to the latest RadToolz release on GitHub?"
                 resultText = "RadToolz version " & vers & " has been released.  You have version " & RTZVers().ToString & " installed."
             Else ' Current release version
-                resultText = "RadToolz Is up to date." & localNoInput
+                resultText = "RadToolz is up to date at version " & vers & "."
             End If
 
             ' DDR-0016: skip this dialog if RadToolzAddIn's on-open check already
