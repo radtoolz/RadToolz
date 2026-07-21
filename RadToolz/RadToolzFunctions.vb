@@ -1094,6 +1094,22 @@ HandleErrors:
 
         On Error GoTo HandleErrors
 
+        ' DDR-0018: IsMacroType:=True combined with AllowReference:=True
+        ' (required so RTZFunctions receives uRng as a genuine cell
+        ' reference, not its resolved value) causes Excel to automatically
+        ' mark this function volatile - confirmed by Excel-DNA's maintainer
+        ' (github.com/Excel-DNA/ExcelDna/issues/84) - which is why it
+        ' recalculates on workbook open and on any other unrelated
+        ' workbook change, not just on fresh entry or an explicit full
+        ' recalc. Setting IsVolatile:=False on the ExcelFunction attribute
+        ' has no effect for this combination (also confirmed by the
+        ' maintainer); explicitly clearing the flag via the C API is the
+        ' only mechanism that works. Per explicit user direction: accepted
+        ' trade-off is that plain F9 no longer re-triggers this function
+        ' (Excel no longer considers it dirty on unrelated changes) - only
+        ' a fresh formula entry or Ctrl+Alt+F9 (Full Calculation) does.
+        Excel(xlfVolatile, False)
+
 #Disable Warning IDE0002 ' Simplify Member Access
         Dim cCellAddr As String = DirectCast(Excel(xlfReftext, DirectCast(XlCall.Excel(XlCall.xlfCaller), ExcelReference), True), String)
 #Enable Warning IDE0002 ' Simplify Member Access
@@ -1332,6 +1348,22 @@ HandleErrors:
         '*              table starting at uRng).
 
         On Error GoTo HandleErrors
+
+        ' DDR-0018: IsMacroType:=True combined with AllowReference:=True
+        ' (required so RTZParams receives uRng as a genuine cell reference,
+        ' not its resolved value) causes Excel to automatically mark this
+        ' function volatile - confirmed by Excel-DNA's maintainer
+        ' (github.com/Excel-DNA/ExcelDna/issues/84) - which is why it
+        ' recalculates on workbook open and on any other unrelated
+        ' workbook change, not just on fresh entry or an explicit full
+        ' recalc. Setting IsVolatile:=False on the ExcelFunction attribute
+        ' has no effect for this combination (also confirmed by the
+        ' maintainer); explicitly clearing the flag via the C API is the
+        ' only mechanism that works. Per explicit user direction: accepted
+        ' trade-off is that plain F9 no longer re-triggers this function
+        ' (Excel no longer considers it dirty on unrelated changes) - only
+        ' a fresh formula entry or Ctrl+Alt+F9 (Full Calculation) does.
+        Excel(xlfVolatile, False)
 
         Dim pds As New ProcessDecaySeries
         Dim Rsp As Boolean
