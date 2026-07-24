@@ -1165,9 +1165,9 @@ HandleErrors:
         c = Convert.ToInt32(iRng.Column)
 
         ' DEBT-0004: guard against silently overwriting a populated target range.
-        ' rowCount must stay in sync with the number of entries written below (18
-        ' rows: 11 nuclear functions + 7 RadToolz info functions).
-        Const rowCount As Integer = 18
+        ' rowCount must stay in sync with the number of entries written below (19
+        ' rows: 12 nuclear functions + 7 RadToolz info functions).
+        Const rowCount As Integer = 19
         Const colCount As Integer = 2
         Dim targetRange As Range = iSheet.Range(iSheet.Cells(r, c), iSheet.Cells(r + rowCount - 1, c + colCount - 1))
 
@@ -1205,6 +1205,9 @@ HandleErrors:
         r += 1
         iSheet.Cells(r, c) = "AValue"
         iSheet.Cells(r, c + 1) = "A1 or A2 value (10 CFR 71 App A) for a radionuclide"
+        r += 1
+        iSheet.Cells(r, c) = "BuildupFactor"
+        iSheet.Cells(r, c + 1) = "Gamma-ray buildup factor (point-isotropic source, infinite medium) for a shield material, energy, and thickness"
         r += 1
         iSheet.Cells(r, c) = "DCF"
         iSheet.Cells(r, c + 1) = "Dose conversion factors (ICRP-68 or 72) for a radionuclide"
@@ -1408,9 +1411,11 @@ HandleErrors:
         '*              DecaySeriesItem and the DCF() function; GENII ->
         '*              XoQ/TGSigma's Gaussian-plume dispersion model;
         '*              ANSI 8.1/8.15 -> FGE's N/D constants; XCOM ->
-        '*              MassAttenuation's fit coefficients). No logic here
-        '*              depends on this text; it exists purely to give
-        '*              users a citable source list via MsgBox.
+        '*              MassAttenuation's fit coefficients; JAERI ->
+        '*              BuildupFactor's G-P coefficients, see DDR-0017).
+        '*              No logic here depends on this text; it exists
+        '*              purely to give users a citable source list via
+        '*              MsgBox.
 
         Dim Msg As String
         Dim ENSDF As String
@@ -1419,6 +1424,7 @@ HandleErrors:
         Dim ANSI8_1 As String
         Dim ANSI8_15 As String
         Dim XCOM As String
+        Dim JAERI As String
 
         If Not String.IsNullOrEmpty(no_input) Then no_input = ""
 
@@ -1457,7 +1463,16 @@ HandleErrors:
                 "    https://www.nist.gov/pml/xcom-photon-cross-sections-database " & vbCrLf &
                 "    as of 3/28/2025" & vbCrLf & vbCrLf
 
-        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15 & XCOM
+        JAERI = "Gamma-ray buildup factor G-P coefficients are from:" & vbCrLf &
+                vbCrLf &
+                "    Sakamoto, Y., Tanaka, S., 1990. QAD-CGGP2 and G33-GP2: Revised" & vbCrLf &
+                "    Versions of QAD-CGGP and G33-GP Codes with the Conversion Factors" & vbCrLf &
+                "    from Exposure to Ambient and Maximum Dose Equivalents. JAERI-M" & vbCrLf &
+                "    90-110, Japan Atomic Energy Research Institute." & vbCrLf &
+                "    Basis for ANSI/ANS-6.4.3-1991, Gamma-Ray Attenuation Coefficients" & vbCrLf &
+                "    and Buildup Factors for Engineering Materials." & vbCrLf & vbCrLf
+
+        Msg = ENSDF & ICRP119 & GENII & ANSI8_1 & ANSI8_15 & XCOM & JAERI
 
         Dim msgBoxResult As Object = MsgBox(Msg, vbOKOnly, "RadToolz vers. " & RTZVers().ToString)
 

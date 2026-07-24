@@ -114,6 +114,14 @@ DEBT-0004/DEBT-0005, then DEBT-0009, at leisure.
 - **Suggested remedy:** If a third sheet-writing UDF ever needs the same overwrite-guard-plus-debounce pattern, extract a shared helper at that point (Rule of Three) rather than duplicating a third time.
 - **Date recorded:** 2026-07-20
 
+## DEBT-0018: BuildupFactor is IsThreadSafe:=False despite being pure computation
+
+- **Location:** `BuildupFactor.vb` (`BuildupFactor` `ExcelFunction` attribute).
+- **Description:** `BuildupFactor` reads only from `BuildupFactorRepository`'s Lazy-cached, read-only coefficient table and has no shared mutable state, so it is a candidate for `IsThreadSafe:=True` (letting Excel run it concurrently across recalculation threads). It was registered `IsThreadSafe:=False` instead, matching every other RadToolz UDF, so this addition does not introduce the first thread-safe UDF in the codebase as a side effect of an unrelated feature (DDR-0017).
+- **Risk:** Informational (performance only — no correctness risk from leaving it False).
+- **Suggested remedy:** If/when the project decides to start adopting `IsThreadSafe:=True` for pure-computation UDFs, `BuildupFactor` is a straightforward first candidate; verify `BuildupFactorRepository`'s `Lazy(Of T)` cache is safe under concurrent first-access (it uses the default `LazyThreadSafetyMode.ExecutionAndPublication`, so it already should be) before flipping the flag.
+- **Date recorded:** 2026-07-24
+
 ## DEBT-0015b: RTZUpdate's version-check logic is duplicated in RadToolzAddIn.vb
 
 - **Location:** `RadToolzFunctions.vb` (`RTZUpdate`/`ComputeRtzUpdateStatus`), `RadToolzAddIn.vb` (`CheckForUpdate`).

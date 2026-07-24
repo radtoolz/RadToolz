@@ -8,7 +8,7 @@ Friend Module Constants
     ' RTZVers()/RTZUpdate() (RadToolzFunctions.vb) combine these two into the
     ' displayed version string and compare RadToolzVersion against the DNS TXT
     ' record published at radtoolz.com to detect available updates.
-    Public Const RadToolzVersion As Double = 5.0
+    Public Const RadToolzVersion As Double = 5.01
 
     Public Const RadToolzPreRelease As String = "" 'α ß Γ π Σ σ µ
 

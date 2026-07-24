@@ -118,6 +118,9 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildupFactor.vb" />
+    <Compile Include="BuildupFactorItem.vb" />
+    <Compile Include="BuildupFactorRepository.vb" />
     <Compile Include="Constants.vb" />
     <Compile Include="DecayChainBranch.vb" />
     <Compile Include="DecaySeriesItem.vb" />
@@ -151,6 +154,7 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="BuildupFactorData.json" />
     <EmbeddedResource Include="DecaySeriesData.json" />
   </ItemGroup>
   <ItemGroup>
